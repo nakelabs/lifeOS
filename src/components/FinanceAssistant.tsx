@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -279,18 +278,48 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
     }
 
     try {
-      const { error } = await supabase
+      // First, check if a paycheck record already exists
+      const { data: existingPaycheck, error: fetchError } = await supabase
         .from('financial_records')
-        .upsert([
-          {
-            user_id: user?.id,
-            type: 'monthly_paycheck',
-            category: 'Salary',
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('type', 'monthly_paycheck')
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+      let error;
+      
+      if (existingPaycheck) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('financial_records')
+          .update({
             amount: parseFloat(paycheckAmount),
             description: 'Monthly paycheck amount',
             recorded_at: new Date().toISOString()
-          }
-        ], { onConflict: 'user_id,type' });
+          })
+          .eq('user_id', user?.id)
+          .eq('type', 'monthly_paycheck');
+        
+        error = updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('financial_records')
+          .insert([
+            {
+              user_id: user?.id,
+              type: 'monthly_paycheck',
+              category: 'Salary',
+              amount: parseFloat(paycheckAmount),
+              description: 'Monthly paycheck amount',
+              recorded_at: new Date().toISOString()
+            }
+          ]);
+        
+        error = insertError;
+      }
 
       if (error) throw error;
 
