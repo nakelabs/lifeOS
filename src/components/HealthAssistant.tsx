@@ -4,27 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Heart, Droplets, Moon, Activity, TrendingUp, Target } from "lucide-react";
 import { useHealthData } from '@/hooks/useHealthData';
+import { useHealthGoals } from '@/hooks/useHealthGoals';
 import HealthLogger from './HealthLogger';
 
 const HealthAssistant = ({ onBack }: { onBack: () => void }) => {
-  const { getTotalForToday, getTodaysData, loading } = useHealthData();
+  const { getTotalForToday, getTodaysData, loading: healthLoading } = useHealthData();
+  const { goals, loading: goalsLoading } = useHealthGoals();
 
-  // Calculate real-time health stats
+  // Calculate real-time health stats using personalized goals
   const waterIntake = getTotalForToday('water');
-  const waterGoal = 8;
+  const waterGoal = goals.water_goal;
   const waterProgress = Math.min((waterIntake / waterGoal) * 100, 100);
 
   const sleepHours = getTotalForToday('sleep');
-  const sleepGoal = 8;
+  const sleepGoal = goals.sleep_goal;
   const sleepProgress = Math.min((sleepHours / sleepGoal) * 100, 100);
 
   const exerciseMinutes = getTotalForToday('exercise');
-  const exerciseGoal = 30;
+  const exerciseGoal = goals.exercise_goal;
   const exerciseProgress = Math.min((exerciseMinutes / exerciseGoal) * 100, 100);
 
   // For heart rate, get the latest reading
   const heartRateEntries = getTodaysData('heart_rate');
   const latestHeartRate = heartRateEntries.length > 0 ? heartRateEntries[0].value || 0 : 0;
+  const heartRateTarget = goals.heart_rate_target;
 
   const healthStats = [
     { 
@@ -61,7 +64,8 @@ const HealthAssistant = ({ onBack }: { onBack: () => void }) => {
       icon: Heart, 
       color: "red",
       bgColor: "bg-red-50",
-      gradient: "from-red-500 to-pink-500"
+      gradient: "from-red-500 to-pink-500",
+      target: `Target: ${heartRateTarget} bpm`
     }
   ];
 
@@ -72,7 +76,7 @@ const HealthAssistant = ({ onBack }: { onBack: () => void }) => {
     { icon: "🥗", tip: "Add some vegetables to your next meal", action: "nutrition" }
   ];
 
-  if (loading) {
+  if (healthLoading || goalsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
@@ -98,7 +102,7 @@ const HealthAssistant = ({ onBack }: { onBack: () => void }) => {
               </div>
               <span>Health Assistant</span>
             </h1>
-            <p className="text-gray-600 ml-13">Track your wellness journey</p>
+            <p className="text-gray-600 ml-13">Track your wellness journey with personalized goals</p>
           </div>
         </div>
 
@@ -123,6 +127,9 @@ const HealthAssistant = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-2xl font-bold text-gray-800 mb-3">
                   {stat.value}
                 </div>
+                {stat.target && (
+                  <div className="text-xs text-gray-500 mb-2">{stat.target}</div>
+                )}
                 <div className="space-y-2">
                   <Progress value={stat.progress} className="h-3" />
                   <div className="flex justify-between items-center">

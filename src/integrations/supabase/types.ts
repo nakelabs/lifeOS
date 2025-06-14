@@ -78,6 +78,39 @@ export type Database = {
         }
         Relationships: []
       }
+      health_goals: {
+        Row: {
+          created_at: string
+          exercise_goal: number | null
+          heart_rate_target: number | null
+          id: string
+          sleep_goal: number | null
+          updated_at: string
+          user_id: string
+          water_goal: number | null
+        }
+        Insert: {
+          created_at?: string
+          exercise_goal?: number | null
+          heart_rate_target?: number | null
+          id?: string
+          sleep_goal?: number | null
+          updated_at?: string
+          user_id: string
+          water_goal?: number | null
+        }
+        Update: {
+          created_at?: string
+          exercise_goal?: number | null
+          heart_rate_target?: number | null
+          id?: string
+          sleep_goal?: number | null
+          updated_at?: string
+          user_id?: string
+          water_goal?: number | null
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           content: string

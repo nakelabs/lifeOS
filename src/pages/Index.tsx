@@ -1,93 +1,101 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import Auth from "@/components/Auth";
 import Landing from "@/components/Landing";
 import Dashboard from "@/components/Dashboard";
-import HealthAssistant from "@/components/HealthAssistant";
-import FinanceAssistant from "@/components/FinanceAssistant";
-import ChatAssistant from "@/components/ChatAssistant";
-import Settings from "@/components/Settings";
-import UserProfile from "@/components/UserProfile";
 import ProfileSetup from "@/components/ProfileSetup";
+import HealthAssistant from "@/components/HealthAssistant";
+import GoalsSettings from "@/components/GoalsSettings";
+import ChatAssistant from "@/components/ChatAssistant";
 import QuickJournal from "@/components/QuickJournal";
+import FinanceAssistant from "@/components/FinanceAssistant";
+import LearningCompanion from "@/components/LearningCompanion";
 import EmotionalWellbeing from "@/components/EmotionalWellbeing";
+import UserProfile from "@/components/UserProfile";
+import Settings from "@/components/Settings";
+
+type Section = 
+  | "dashboard" 
+  | "health" 
+  | "goals"
+  | "chat" 
+  | "journal" 
+  | "finance" 
+  | "learning" 
+  | "emotional" 
+  | "profile" 
+  | "settings";
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const [currentView, setCurrentView] = useState<string>("landing");
+  const [currentSection, setCurrentSection] = useState<Section>("dashboard");
 
-  // Show loading while checking auth
+  // Handle navigation between sections
+  const handleNavigate = (section: string) => {
+    setCurrentSection(section as Section);
+  };
+
+  // Reset to dashboard when navigating back
+  const handleBackToDashboard = () => {
+    setCurrentSection("dashboard");
+  };
+
+  // Show loading state while checking auth
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading LifeOS...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // Show auth if not logged in
+  // Show landing page if not authenticated
   if (!user) {
-    return <Auth onAuthSuccess={() => setCurrentView("landing")} />;
+    return <Landing />;
   }
 
-  const handleGetStarted = () => {
-    if (profile && profile.focus_areas.length > 0) {
-      setCurrentView("dashboard");
-    } else {
-      setCurrentView("profile-setup");
-    }
-  };
+  // Show profile setup if no profile exists
+  if (!profile) {
+    return <ProfileSetup />;
+  }
 
-  const handleNavigate = (section: string) => {
-    setCurrentView(section);
-  };
-
-  const handleBack = () => {
-    setCurrentView("dashboard");
-  };
-
-  const handleProfileCreated = () => {
-    setCurrentView("dashboard");
-  };
-
-  const handleProfileUpdated = () => {
-    // Profile updates are handled by the useProfile hook
-  };
-
-  const renderCurrentView = () => {
-    switch (currentView) {
-      case "landing":
-        return <Landing onGetStarted={handleGetStarted} />;
-      case "profile-setup":
-        return <ProfileSetup onProfileCreated={handleProfileCreated} />;
-      case "dashboard":
-        return <Dashboard userName={profile?.name || "Friend"} onNavigate={handleNavigate} />;
-      case "profile":
-        return <UserProfile profile={profile} onBack={handleBack} onProfileUpdated={handleProfileUpdated} />;
-      case "settings":
-        return <Settings onBack={handleBack} />;
+  // Render the appropriate section
+  const renderSection = () => {
+    switch (currentSection) {
       case "health":
-        return <HealthAssistant onBack={handleBack} />;
-      case "finance":
-        return <FinanceAssistant onBack={handleBack} />;
+        return <HealthAssistant onBack={handleBackToDashboard} />;
+      case "goals":
+        return <GoalsSettings onBack={handleBackToDashboard} />;
       case "chat":
-        return <ChatAssistant onBack={handleBack} />;
+        return <ChatAssistant onBack={handleBackToDashboard} />;
       case "journal":
-        return <QuickJournal onBack={handleBack} />;
+        return <QuickJournal onBack={handleBackToDashboard} />;
+      case "finance":
+        return <FinanceAssistant onBack={handleBackToDashboard} />;
+      case "learning":
+        return <LearningCompanion onBack={handleBackToDashboard} />;
       case "emotional":
-        return <EmotionalWellbeing onBack={handleBack} />;
+        return <EmotionalWellbeing onBack={handleBackToDashboard} />;
+      case "profile":
+        return <UserProfile onBack={handleBackToDashboard} />;
+      case "settings":
+        return <Settings onBack={handleBackToDashboard} />;
       default:
-        return <Dashboard userName={profile?.name || "Friend"} onNavigate={handleNavigate} />;
+        return (
+          <Dashboard 
+            userName={profile.name} 
+            onNavigate={handleNavigate}
+          />
+        );
     }
   };
 
-  return renderCurrentView();
+  return renderSection();
 };
 
 export default Index;

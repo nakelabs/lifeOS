@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, DollarSign, BookOpen, Brain, MessageCircle, Settings, TrendingUp, Moon, Droplets, User, Sparkles, Target, Activity, Zap } from "lucide-react";
 import { useHealthData } from '@/hooks/useHealthData';
+import { useHealthGoals } from '@/hooks/useHealthGoals';
 
 const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onNavigate: (section: string) => void }) => {
   const { getTotalForToday, loading: healthLoading } = useHealthData();
+  const { goals, loading: goalsLoading } = useHealthGoals();
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? "Good morning" : currentHour < 17 ? "Good afternoon" : "Good evening";
 
@@ -14,47 +16,51 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  // Get real health data
+  // Get real health data with personalized goals
   const waterIntake = getTotalForToday('water');
+  const waterGoal = goals.water_goal;
   const sleepHours = getTotalForToday('sleep');
+  const sleepGoal = goals.sleep_goal;
   const exerciseMinutes = getTotalForToday('exercise');
+  const exerciseGoal = goals.exercise_goal;
   const heartRate = getTotalForToday('heart_rate');
+  const heartRateTarget = goals.heart_rate_target;
   
   const summaryCards = [
     {
       title: "Water Intake",
       value: waterIntake > 0 ? `${waterIntake} glasses` : "No data",
-      subtitle: waterIntake > 0 ? `${Math.max(0, 8 - waterIntake)} more to reach your goal! 💧` : "Start tracking your hydration",
+      subtitle: waterIntake > 0 ? `${Math.max(0, waterGoal - waterIntake)} more to reach your goal! 💧` : "Start tracking your hydration",
       icon: Droplets,
       color: "from-blue-500 via-cyan-500 to-teal-500",
       bgAccent: "bg-blue-50",
-      progress: Math.min((waterIntake / 8) * 100, 100),
+      progress: Math.min((waterIntake / waterGoal) * 100, 100),
       action: () => onNavigate("health")
     },
     {
       title: "Sleep Tracker",
       value: sleepHours > 0 ? `${sleepHours}h` : "No data",
-      subtitle: sleepHours > 0 ? (sleepHours >= 7 ? "Great sleep! 😴" : "Try to get more rest") : "Log your sleep data",
+      subtitle: sleepHours > 0 ? (sleepHours >= sleepGoal * 0.9 ? "Great sleep! 😴" : "Try to get more rest") : "Log your sleep data",
       icon: Moon,
       color: "from-indigo-500 via-purple-500 to-pink-500",
       bgAccent: "bg-indigo-50",
-      progress: Math.min((sleepHours / 8) * 100, 100),
+      progress: Math.min((sleepHours / sleepGoal) * 100, 100),
       action: () => onNavigate("health")
     },
     {
       title: "Exercise Today",
       value: exerciseMinutes > 0 ? `${exerciseMinutes} min` : "No data",
-      subtitle: exerciseMinutes > 0 ? (exerciseMinutes >= 30 ? "Keep up the great work! 💪" : "Almost there!") : "Start your fitness journey",
+      subtitle: exerciseMinutes > 0 ? (exerciseMinutes >= exerciseGoal ? "Keep up the great work! 💪" : "Almost there!") : "Start your fitness journey",
       icon: Activity,
       color: "from-green-500 via-emerald-500 to-teal-500",
       bgAccent: "bg-green-50",
-      progress: Math.min((exerciseMinutes / 30) * 100, 100),
+      progress: Math.min((exerciseMinutes / exerciseGoal) * 100, 100),
       action: () => onNavigate("health")
     },
     {
       title: "Heart Rate",
       value: heartRate > 0 ? `${heartRate} bpm` : "No data",
-      subtitle: heartRate > 0 ? "Looking healthy! ❤️" : "Track your vitals",
+      subtitle: heartRate > 0 ? `Target: ${heartRateTarget} bpm ❤️` : "Track your vitals",
       icon: Heart,
       color: "from-rose-500 via-pink-500 to-red-500",
       bgAccent: "bg-rose-50",
@@ -67,10 +73,10 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
     { icon: MessageCircle, label: "AI Chat", action: () => onNavigate("chat"), color: "text-blue-600" },
     { icon: Droplets, label: "Log Water", action: () => onNavigate("health"), color: "text-cyan-600" },
     { icon: Activity, label: "Exercise", action: () => onNavigate("health"), color: "text-green-600" },
-    { icon: Brain, label: "Quick Journal", action: () => onNavigate("journal"), color: "text-purple-600" }
+    { icon: Target, label: "Set Goals", action: () => onNavigate("goals"), color: "text-purple-600" }
   ];
 
-  if (healthLoading) {
+  if (healthLoading || goalsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -106,6 +112,13 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
             </div>
           </div>
           <div className="flex space-x-3">
+            <Button 
+              variant="outline" 
+              onClick={() => onNavigate("goals")}
+              className="rounded-full p-3 hover:bg-purple-50 border-purple-200 transition-colors hover:scale-105"
+            >
+              <Target className="w-5 h-5 text-purple-600" />
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => onNavigate("profile")}
@@ -224,7 +237,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-3">Daily Inspiration</h3>
             <p className="text-gray-700 text-lg leading-relaxed max-w-2xl mx-auto">
-              "Every small step you take today builds the foundation for tomorrow's success. Progress isn't about perfection—it's about consistency. You've got this! 🌟"
+              "Every small step you take today builds the foundation for tomorrow's success. Your personalized goals are designed just for you—progress isn't about perfection, it's about consistency. You've got this! 🌟"
             </p>
           </CardContent>
         </Card>
