@@ -200,12 +200,12 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+        <CardHeader className="border-b">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
-              <Calculator className="w-5 h-5 mr-2" />
+              <Calculator className="w-5 h-5 mr-2 text-blue-600" />
               Paycheck Allocator
             </div>
             <Button variant="ghost" onClick={onClose}>
@@ -216,17 +216,18 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
             Monthly Paycheck: ₦{monthlyPaycheck.toLocaleString()}
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6 space-y-6">
           {/* AI Request Section */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-800">Ask AI to Allocate Your Paycheck</h3>
+            <h3 className="font-semibold text-gray-900">Ask AI to Allocate Your Paycheck</h3>
             <Textarea
               value={userRequest}
               onChange={(e) => setUserRequest(e.target.value)}
               placeholder="e.g., 'I want 40,000 for food, 30,000 for transportation, and the rest for savings' or 'Help me budget for a family of 4'"
               rows={3}
+              className="resize-none"
             />
-            <Button onClick={generateAIAllocation} disabled={loading} className="w-full">
+            <Button onClick={generateAIAllocation} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
               {loading ? 'Generating...' : 'Generate AI Allocation'}
               <Lightbulb className="w-4 h-4 ml-2" />
             </Button>
@@ -239,7 +240,7 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
                 <div className="flex items-start space-x-3">
                   <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-blue-800">AI Recommendation</h4>
+                    <h4 className="font-semibold text-blue-800 mb-1">AI Recommendation</h4>
                     <p className="text-sm text-blue-700">{aiSuggestion}</p>
                   </div>
                 </div>
@@ -250,7 +251,7 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
           {/* Manual Allocation Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800">Allocation Breakdown</h3>
+              <h3 className="font-semibold text-gray-900">Allocation Breakdown</h3>
               <Button onClick={addAllocation} variant="outline" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Category
@@ -275,14 +276,14 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
                     className="w-32"
                   />
                 </div>
-                <span className="text-sm text-gray-600 w-16">
+                <span className="text-sm text-gray-600 w-16 text-center">
                   {allocation.percentage.toFixed(1)}%
                 </span>
                 <Button
                   onClick={() => removeAllocation(allocation.id)}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -292,31 +293,32 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
             {allocations.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <Calculator className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No allocations yet. Use AI generation or add categories manually.</p>
+                <p className="mb-2">No allocations yet</p>
+                <p className="text-sm">Use AI generation or add categories manually.</p>
               </div>
             )}
           </div>
 
           {/* Summary */}
           {allocations.length > 0 && (
-            <Card className="bg-gray-50">
+            <Card className="bg-gray-50 border-gray-200">
               <CardContent className="p-4">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
-                    <p className="text-sm text-gray-600">Total Allocated</p>
-                    <p className="text-lg font-semibold text-gray-800">
+                    <p className="text-sm text-gray-600 mb-1">Total Allocated</p>
+                    <p className="text-lg font-semibold text-gray-900">
                       ₦{getTotalAllocated().toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Remaining</p>
+                    <p className="text-sm text-gray-600 mb-1">Remaining</p>
                     <p className={`text-lg font-semibold ${getRemainingAmount() < 0 ? 'text-red-600' : 'text-green-600'}`}>
                       ₦{getRemainingAmount().toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Utilization</p>
-                    <p className="text-lg font-semibold text-gray-800">
+                    <p className="text-sm text-gray-600 mb-1">Utilization</p>
+                    <p className="text-lg font-semibold text-gray-900">
                       {((getTotalAllocated() / monthlyPaycheck) * 100).toFixed(1)}%
                     </p>
                   </div>
@@ -326,8 +328,8 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
           )}
 
           {/* Action Buttons */}
-          <div className="flex space-x-4">
-            <Button onClick={handleSave} className="flex-1">
+          <div className="flex space-x-4 pt-4 border-t">
+            <Button onClick={handleSave} className="flex-1 bg-blue-600 hover:bg-blue-700">
               Save Allocation
             </Button>
             <Button onClick={onClose} variant="outline" className="flex-1">
