@@ -50,7 +50,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
     { icon: MessageCircle, label: "Chat with AI", action: () => onNavigate("chat") },
     { icon: Droplets, label: "Log Water", action: () => onNavigate("health") },
     { icon: TrendingUp, label: "Add Expense", action: () => onNavigate("finance") },
-    { icon: Brain, label: "Quick Journal", action: () => onNavigate("emotional") }
+    { icon: Brain, label: "Quick Journal", action: () => onNavigate("journal") }
   ];
 
   return (

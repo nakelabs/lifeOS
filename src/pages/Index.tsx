@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Landing from "@/components/Landing";
 import Dashboard from "@/components/Dashboard";
@@ -8,6 +7,8 @@ import ChatAssistant from "@/components/ChatAssistant";
 import Settings from "@/components/Settings";
 import UserProfile from "@/components/UserProfile";
 import ProfileSetup from "@/components/ProfileSetup";
+import QuickJournal from "@/components/QuickJournal";
+import EmotionalWellbeing from "@/components/EmotionalWellbeing";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<string>("landing");
@@ -56,6 +57,10 @@ const Index = () => {
         return <FinanceAssistant onBack={handleBack} />;
       case "chat":
         return <ChatAssistant onBack={handleBack} />;
+      case "journal":
+        return <QuickJournal onBack={handleBack} />;
+      case "emotional":
+        return <EmotionalWellbeing onBack={handleBack} />;
       default:
         return <Dashboard userName={userProfile?.name || "Friend"} onNavigate={handleNavigate} />;
     }
