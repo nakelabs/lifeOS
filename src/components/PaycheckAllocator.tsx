@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Calculator, Lightbulb, Plus, X, DollarSign, Target, Car, House } from "lucide-react";
+import { Calculator, Lightbulb, Plus, X, DollarSign, Target, Car, House, PiggyBank } from "lucide-react";
 import { useState } from "react";
 
 interface AllocationItem {
@@ -13,6 +13,9 @@ interface AllocationItem {
   amount: number;
   percentage: number;
   type?: 'regular' | 'special' | 'savings';
+  targetAmount?: number;
+  currentAmount?: number;
+  deadline?: string;
 }
 
 interface PaycheckAllocatorProps {
@@ -35,12 +38,16 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
       category: '',
       amount: 0,
       percentage: 0,
-      type
+      type,
+      ...(type === 'savings' && { 
+        targetAmount: 0, 
+        currentAmount: 0 
+      })
     };
     setAllocations([...allocations, newAllocation]);
   };
 
-  const updateAllocation = (id: string, field: 'category' | 'amount', value: string | number) => {
+  const updateAllocation = (id: string, field: keyof AllocationItem, value: string | number) => {
     setAllocations(allocations.map(allocation => {
       if (allocation.id === id) {
         const updated = { ...allocation, [field]: value };
@@ -113,10 +120,10 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
       { keywords: ['transport', 'fuel', 'uber'], category: 'Transportation', suggestedPercentage: 15, type: 'regular' as const },
       { keywords: ['entertainment', 'fun', 'movies'], category: 'Entertainment', suggestedPercentage: 10, type: 'regular' as const },
       { keywords: ['bills', 'utilities', 'electricity'], category: 'Bills & Utilities', suggestedPercentage: 10, type: 'regular' as const },
-      { keywords: ['car', 'vehicle', 'auto'], category: 'Car Fund', suggestedPercentage: 10, type: 'special' as const },
-      { keywords: ['house', 'home', 'property'], category: 'House Fund', suggestedPercentage: 15, type: 'special' as const },
-      { keywords: ['savings', 'save', 'emergency'], category: 'Emergency Fund', suggestedPercentage: 20, type: 'savings' as const },
-      { keywords: ['investment', 'invest'], category: 'Investment', suggestedPercentage: 10, type: 'savings' as const }
+      { keywords: ['car', 'vehicle', 'auto'], category: 'Car Fund', suggestedPercentage: 10, type: 'special' as const, targetAmount: 2000000 },
+      { keywords: ['house', 'home', 'property'], category: 'House Fund', suggestedPercentage: 15, type: 'special' as const, targetAmount: 5000000 },
+      { keywords: ['savings', 'save', 'emergency'], category: 'Emergency Fund', suggestedPercentage: 20, type: 'savings' as const, targetAmount: paycheck * 6 },
+      { keywords: ['investment', 'invest'], category: 'Investment', suggestedPercentage: 10, type: 'savings' as const, targetAmount: paycheck * 12 }
     ];
 
     // Check for specific amounts mentioned in the request
@@ -127,7 +134,7 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
     let totalAllocated = 0;
 
     // Try to match categories with amounts
-    categories.forEach(({ keywords, category, suggestedPercentage, type }) => {
+    categories.forEach(({ keywords, category, suggestedPercentage, type, targetAmount }) => {
       const mentioned = keywords.some(keyword => lowerRequest.includes(keyword));
       if (mentioned) {
         let amount = 0;
@@ -137,13 +144,20 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
           amount = (paycheck * suggestedPercentage) / 100;
         }
         
-        allocations.push({
+        const allocation: AllocationItem = {
           id: currentId.toString(),
           category,
           amount: Math.round(amount),
           percentage: (amount / paycheck) * 100,
           type
-        });
+        };
+
+        if (type === 'savings') {
+          allocation.targetAmount = targetAmount || Math.round(amount * 10);
+          allocation.currentAmount = 0;
+        }
+        
+        allocations.push(allocation);
         totalAllocated += amount;
         currentId++;
       }
@@ -168,10 +182,12 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
         },
         {
           id: '3',
-          category: 'Savings & Investments',
+          category: 'Emergency Fund',
           amount: Math.round(paycheck * 0.2),
           percentage: 20,
-          type: 'savings'
+          type: 'savings',
+          targetAmount: Math.round(paycheck * 6),
+          currentAmount: 0
         }
       ];
       totalAllocated = paycheck;
@@ -238,43 +254,94 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
           </h3>
           <Button onClick={() => addAllocation(type)} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
-            Add {type === 'regular' ? 'Expense' : type === 'special' ? 'Goal' : 'Savings'}
+            Add {type === 'regular' ? 'Expense' : type === 'special' ? 'Goal' : 'Savings Goal'}
           </Button>
         </div>
 
         {typeAllocations.map((allocation) => (
-          <div key={allocation.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-            <Input
-              value={allocation.category}
-              onChange={(e) => updateAllocation(allocation.id, 'category', e.target.value)}
-              placeholder={
-                type === 'regular' ? 'Category (e.g., Food, Rent)' :
-                type === 'special' ? 'Goal (e.g., Car, House)' :
-                'Savings (e.g., Emergency Fund)'
-              }
-              className="flex-1"
-            />
-            <div className="flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-gray-500" />
+          <div key={allocation.id} className="p-4 bg-gray-50 rounded-lg space-y-4">
+            <div className="flex items-center space-x-4">
               <Input
-                type="number"
-                value={allocation.amount || ''}
-                onChange={(e) => updateAllocation(allocation.id, 'amount', parseFloat(e.target.value) || 0)}
-                placeholder="Amount"
-                className="w-32"
+                value={allocation.category}
+                onChange={(e) => updateAllocation(allocation.id, 'category', e.target.value)}
+                placeholder={
+                  type === 'regular' ? 'Category (e.g., Food, Rent)' :
+                  type === 'special' ? 'Goal (e.g., Car, House)' :
+                  'Savings Goal (e.g., Emergency Fund, Vacation)'
+                }
+                className="flex-1"
               />
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-4 h-4 text-gray-500" />
+                <Input
+                  type="number"
+                  value={allocation.amount || ''}
+                  onChange={(e) => updateAllocation(allocation.id, 'amount', parseFloat(e.target.value) || 0)}
+                  placeholder="Monthly Amount"
+                  className="w-32"
+                />
+              </div>
+              <span className="text-sm text-gray-600 w-16 text-center">
+                {allocation.percentage.toFixed(1)}%
+              </span>
+              <Button
+                onClick={() => removeAllocation(allocation.id)}
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
-            <span className="text-sm text-gray-600 w-16 text-center">
-              {allocation.percentage.toFixed(1)}%
-            </span>
-            <Button
-              onClick={() => removeAllocation(allocation.id)}
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+
+            {type === 'savings' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Target Amount</label>
+                  <Input
+                    type="number"
+                    value={allocation.targetAmount || ''}
+                    onChange={(e) => updateAllocation(allocation.id, 'targetAmount', parseFloat(e.target.value) || 0)}
+                    placeholder="Goal amount"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Current Amount</label>
+                  <Input
+                    type="number"
+                    value={allocation.currentAmount || ''}
+                    onChange={(e) => updateAllocation(allocation.id, 'currentAmount', parseFloat(e.target.value) || 0)}
+                    placeholder="Amount saved"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Target Date (Optional)</label>
+                  <Input
+                    type="date"
+                    value={allocation.deadline || ''}
+                    onChange={(e) => updateAllocation(allocation.id, 'deadline', e.target.value)}
+                  />
+                </div>
+                {allocation.targetAmount && allocation.targetAmount > 0 && (
+                  <div className="col-span-full">
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <span>{((allocation.currentAmount || 0) / allocation.targetAmount * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${Math.min(((allocation.currentAmount || 0) / allocation.targetAmount) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>₦{(allocation.currentAmount || 0).toLocaleString()}</span>
+                      <span>₦{allocation.targetAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
 
@@ -283,10 +350,10 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
               {type === 'regular' ? <Calculator className="w-6 h-6 text-gray-400" /> :
                type === 'special' ? <Target className="w-6 h-6 text-gray-400" /> :
-               <DollarSign className="w-6 h-6 text-gray-400" />}
+               <PiggyBank className="w-6 h-6 text-gray-400" />}
             </div>
             <p className="mb-2">No {type} allocations yet</p>
-            <p className="text-sm">Add your first {type} allocation.</p>
+            <p className="text-sm">Add your first {type} allocation to get started.</p>
           </div>
         )}
       </div>
@@ -317,7 +384,7 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
             <Textarea
               value={userRequest}
               onChange={(e) => setUserRequest(e.target.value)}
-              placeholder="e.g., 'I want 40,000 for food, 20,000 for car savings, and 30,000 for house fund' or 'Help me save for a car while covering my expenses'"
+              placeholder="e.g., 'I want to save for a car (2M), emergency fund (500k), and allocate 40k for food' or 'Help me create a balanced budget with savings goals'"
               rows={3}
               className="resize-none"
             />
@@ -347,7 +414,7 @@ const PaycheckAllocator = ({ monthlyPaycheck, onClose, onSaveAllocation }: Paych
             <div className="flex space-x-2 border-b border-gray-200">
               <TabButton type="regular" label="Regular" icon={Calculator} />
               <TabButton type="special" label="Special" icon={Target} />
-              <TabButton type="savings" label="Savings" icon={DollarSign} />
+              <TabButton type="savings" label="Savings" icon={PiggyBank} />
             </div>
 
             {renderAllocationForm(activeTab)}
