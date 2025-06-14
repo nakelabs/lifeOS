@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit2, Save, X, Heart, DollarSign, BookOpen, Brain, Zap, Users } from "lucide-react";
+import { ArrowLeft, Edit2, Save, X, Heart, DollarSign, BookOpen, Brain, Zap, Users, LogOut } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 
 const UserProfile = ({ 
   profile, 
@@ -17,6 +19,8 @@ const UserProfile = ({
   onBack: () => void; 
   onProfileUpdated: (profile: any) => void; 
 }) => {
+  const { updateProfile } = useProfile();
+  const { signOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
 
@@ -38,14 +42,21 @@ const UserProfile = ({
     relationships: "Relationships"
   };
 
-  const handleSave = () => {
-    onProfileUpdated(editedProfile);
-    setIsEditing(false);
+  const handleSave = async () => {
+    const { error } = await updateProfile(editedProfile);
+    if (!error) {
+      onProfileUpdated(editedProfile);
+      setIsEditing(false);
+    }
   };
 
   const handleCancel = () => {
     setEditedProfile(profile);
     setIsEditing(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   const getInitials = (name: string) => {
@@ -66,23 +77,31 @@ const UserProfile = ({
               <p className="text-gray-600">Manage your personal information and preferences</p>
             </div>
           </div>
-          {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="bg-blue-500 hover:bg-blue-600">
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit Profile
-            </Button>
-          ) : (
-            <div className="flex space-x-2">
-              <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
-                <Save className="w-4 h-4 mr-2" />
-                Save
-              </Button>
-              <Button variant="outline" onClick={handleCancel}>
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-            </div>
-          )}
+          <div className="flex space-x-2">
+            {!isEditing ? (
+              <>
+                <Button onClick={() => setIsEditing(true)} className="bg-blue-500 hover:bg-blue-600">
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+                <Button variant="outline" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+                <Button variant="outline" onClick={handleCancel}>
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -92,7 +111,7 @@ const UserProfile = ({
               <CardContent className="p-6 text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4">
                   <AvatarFallback className="text-2xl bg-gradient-to-r from-blue-500 to-green-500 text-white">
-                    {getInitials(profile.name)}
+                    {getInitials(profile?.name || 'User')}
                   </AvatarFallback>
                 </Avatar>
                 
@@ -101,7 +120,7 @@ const UserProfile = ({
                     <div>
                       <Label>Name</Label>
                       <Input
-                        value={editedProfile.name}
+                        value={editedProfile?.name || ''}
                         onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
@@ -109,23 +128,23 @@ const UserProfile = ({
                       <Label>Age</Label>
                       <Input
                         type="number"
-                        value={editedProfile.age}
+                        value={editedProfile?.age || ''}
                         onChange={(e) => setEditedProfile(prev => ({ ...prev, age: e.target.value }))}
                       />
                     </div>
                     <div>
                       <Label>Location</Label>
                       <Input
-                        value={editedProfile.region}
+                        value={editedProfile?.region || ''}
                         onChange={(e) => setEditedProfile(prev => ({ ...prev, region: e.target.value }))}
                       />
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-1">{profile.name}</h2>
-                    <p className="text-gray-600 mb-2">{profile.age} years old</p>
-                    <p className="text-gray-500">{profile.region}</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-1">{profile?.name || 'User'}</h2>
+                    <p className="text-gray-600 mb-2">{profile?.age} years old</p>
+                    <p className="text-gray-500">{profile?.region}</p>
                   </div>
                 )}
               </CardContent>
@@ -142,7 +161,7 @@ const UserProfile = ({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-3">
-                    {profile.focusAreas.map((area: string) => {
+                    {profile?.focus_areas?.map((area: string) => {
                       const Icon = focusAreaIcons[area as keyof typeof focusAreaIcons];
                       const label = focusAreaLabels[area as keyof typeof focusAreaLabels];
                       return (
@@ -165,20 +184,20 @@ const UserProfile = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Language</Label>
-                      <p className="text-gray-800 capitalize">{profile.language}</p>
+                      <p className="text-gray-800 capitalize">{profile?.language}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Assistant Tone</Label>
-                      <p className="text-gray-800 capitalize">{profile.assistantTone}</p>
+                      <p className="text-gray-800 capitalize">{profile?.assistant_tone}</p>
                     </div>
                   </div>
                   
-                  {profile.goals && (
+                  {profile?.goals && (
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Goals</Label>
                       {isEditing ? (
                         <Input
-                          value={editedProfile.goals}
+                          value={editedProfile?.goals || ''}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, goals: e.target.value }))}
                           placeholder="Your main goals..."
                         />

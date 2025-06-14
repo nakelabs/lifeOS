@@ -7,17 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, DollarSign, BookOpen, Brain, Zap, Users } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 
-const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) => void }) => {
+const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: () => void }) => {
+  const { profile, updateProfile } = useProfile();
   const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState({
-    name: "",
-    age: "",
-    region: "",
-    language: "english",
-    assistantTone: "friendly",
-    focusAreas: [] as string[],
-    goals: ""
+  const [profileData, setProfileData] = useState({
+    name: profile?.name || "",
+    age: profile?.age || "",
+    region: profile?.region || "",
+    language: profile?.language || "english",
+    assistant_tone: profile?.assistant_tone || "friendly",
+    focus_areas: profile?.focus_areas || [] as string[],
+    goals: profile?.goals || ""
   });
 
   const focusOptions = [
@@ -31,32 +33,34 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
 
   const handleFocusAreaChange = (areaId: string, checked: boolean) => {
     if (checked) {
-      setProfile(prev => ({
+      setProfileData(prev => ({
         ...prev,
-        focusAreas: [...prev.focusAreas, areaId]
+        focus_areas: [...prev.focus_areas, areaId]
       }));
     } else {
-      setProfile(prev => ({
+      setProfileData(prev => ({
         ...prev,
-        focusAreas: prev.focusAreas.filter(area => area !== areaId)
+        focus_areas: prev.focus_areas.filter(area => area !== areaId)
       }));
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      onProfileCreated(profile);
+      // Save profile and complete setup
+      await updateProfile(profileData);
+      onProfileCreated();
     }
   };
 
   const canProceed = () => {
     switch (step) {
       case 1:
-        return profile.name && profile.age && profile.region;
+        return profileData.name && profileData.age && profileData.region;
       case 2:
-        return profile.focusAreas.length > 0;
+        return profileData.focus_areas.length > 0;
       case 3:
         return true;
       default:
@@ -93,8 +97,8 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
                 <Input
                   id="name"
                   placeholder="Enter your name"
-                  value={profile.name}
-                  onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  value={profileData.name}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
 
@@ -104,8 +108,8 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
                   id="age"
                   type="number"
                   placeholder="25"
-                  value={profile.age}
-                  onChange={(e) => setProfile(prev => ({ ...prev, age: e.target.value }))}
+                  value={profileData.age}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, age: e.target.value }))}
                 />
               </div>
 
@@ -114,14 +118,14 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
                 <Input
                   id="region"
                   placeholder="e.g., Lagos, Nigeria"
-                  value={profile.region}
-                  onChange={(e) => setProfile(prev => ({ ...prev, region: e.target.value }))}
+                  value={profileData.region}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, region: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Preferred Language</Label>
-                <Select value={profile.language} onValueChange={(value) => setProfile(prev => ({ ...prev, language: value }))}>
+                <Select value={profileData.language} onValueChange={(value) => setProfileData(prev => ({ ...prev, language: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -148,7 +152,7 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
                   <div key={option.id} className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-gray-50">
                     <Checkbox
                       id={option.id}
-                      checked={profile.focusAreas.includes(option.id)}
+                      checked={profileData.focus_areas.includes(option.id)}
                       onCheckedChange={(checked) => handleFocusAreaChange(option.id, !!checked)}
                     />
                     <div className="flex-1">
@@ -170,7 +174,7 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
               
               <div className="space-y-2">
                 <Label>Assistant Tone</Label>
-                <Select value={profile.assistantTone} onValueChange={(value) => setProfile(prev => ({ ...prev, assistantTone: value }))}>
+                <Select value={profileData.assistant_tone} onValueChange={(value) => setProfileData(prev => ({ ...prev, assistant_tone: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -187,15 +191,15 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: (profile: any) =
                 <Input
                   id="goals"
                   placeholder="e.g., Save money, exercise more, learn new skills..."
-                  value={profile.goals}
-                  onChange={(e) => setProfile(prev => ({ ...prev, goals: e.target.value }))}
+                  value={profileData.goals}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, goals: e.target.value }))}
                 />
               </div>
 
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-semibold text-blue-800 mb-2">🎉 You're all set!</h4>
                 <p className="text-sm text-blue-700">
-                  Your personal LifeOS assistant is ready to help you with {profile.focusAreas.length} focus areas.
+                  Your personal LifeOS assistant is ready to help you with {profileData.focus_areas.length} focus areas.
                 </p>
               </div>
             </div>
