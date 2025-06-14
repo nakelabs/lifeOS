@@ -29,7 +29,7 @@ type Section =
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, refetch } = useProfile();
   const [currentSection, setCurrentSection] = useState<Section>("dashboard");
 
   // Handle navigation between sections
@@ -40,6 +40,16 @@ const Index = () => {
   // Reset to dashboard when navigating back
   const handleBackToDashboard = () => {
     setCurrentSection("dashboard");
+  };
+
+  // Handle profile creation
+  const handleProfileCreated = () => {
+    refetch();
+  };
+
+  // Handle profile updates
+  const handleProfileUpdated = (updatedProfile: any) => {
+    refetch();
   };
 
   // Show loading state while checking auth
@@ -56,12 +66,12 @@ const Index = () => {
 
   // Show landing page if not authenticated
   if (!user) {
-    return <Landing />;
+    return <Landing onGetStarted={() => {}} />;
   }
 
   // Show profile setup if no profile exists
   if (!profile) {
-    return <ProfileSetup />;
+    return <ProfileSetup onProfileCreated={handleProfileCreated} />;
   }
 
   // Render the appropriate section
@@ -82,7 +92,13 @@ const Index = () => {
       case "emotional":
         return <EmotionalWellbeing onBack={handleBackToDashboard} />;
       case "profile":
-        return <UserProfile onBack={handleBackToDashboard} />;
+        return (
+          <UserProfile 
+            profile={profile} 
+            onBack={handleBackToDashboard} 
+            onProfileUpdated={handleProfileUpdated}
+          />
+        );
       case "settings":
         return <Settings onBack={handleBackToDashboard} />;
       default:
