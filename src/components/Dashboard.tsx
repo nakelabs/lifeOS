@@ -1,10 +1,11 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, DollarSign, BookOpen, Brain, MessageCircle, Settings, TrendingUp, Moon, Droplets, User, Sparkles, Target } from "lucide-react";
+import { useHealthData } from '@/hooks/useHealthData';
 
 const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onNavigate: (section: string) => void }) => {
+  const { getTotalForToday, loading: healthLoading } = useHealthData();
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? "Good morning" : currentHour < 17 ? "Good afternoon" : "Good evening";
 
@@ -12,11 +13,15 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  // Get real health data
+  const waterIntake = getTotalForToday('water');
+  const sleepHours = getTotalForToday('sleep');
+  
   const summaryCards = [
     {
       title: "Sleep Tracker",
-      value: "6h 30m",
-      subtitle: "Great rest last night! 💤",
+      value: sleepHours > 0 ? `${sleepHours}h` : "No data",
+      subtitle: sleepHours > 0 ? "Keep up the good rest! 💤" : "Log your sleep data",
       icon: Moon,
       color: "from-indigo-500 via-purple-500 to-pink-500",
       bgAccent: "bg-indigo-50",
@@ -32,13 +37,13 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
       action: () => onNavigate("finance")
     },
     {
-      title: "Learning Journey",
-      value: "2 of 10",
-      subtitle: "lessons complete",
-      icon: BookOpen,
+      title: "Water Intake",
+      value: waterIntake > 0 ? `${waterIntake} glasses` : "No data",
+      subtitle: waterIntake > 0 ? `${8 - waterIntake > 0 ? 8 - waterIntake : 0} more to go!` : "Start tracking water",
+      icon: Droplets,
       color: "from-blue-500 via-cyan-500 to-teal-500",
       bgAccent: "bg-blue-50",
-      action: () => onNavigate("learning")
+      action: () => onNavigate("health")
     },
     {
       title: "Mood Check-in",
