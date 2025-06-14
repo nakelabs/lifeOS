@@ -14,6 +14,7 @@ import LearningCompanion from "@/components/LearningCompanion";
 import EmotionalWellbeing from "@/components/EmotionalWellbeing";
 import UserProfile from "@/components/UserProfile";
 import Settings from "@/components/Settings";
+import Auth from "@/components/Auth";
 
 type Section = 
   | "dashboard" 
@@ -31,6 +32,7 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading, refetch } = useProfile();
   const [currentSection, setCurrentSection] = useState<Section>("dashboard");
+  const [showAuth, setShowAuth] = useState(false);
 
   // Handle navigation between sections
   const handleNavigate = (section: string) => {
@@ -52,6 +54,16 @@ const Index = () => {
     refetch();
   };
 
+  // Handle get started button click
+  const handleGetStarted = () => {
+    setShowAuth(true);
+  };
+
+  // Handle successful authentication
+  const handleAuthSuccess = () => {
+    setShowAuth(false);
+  };
+
   // Show loading state while checking auth
   if (authLoading || profileLoading) {
     return (
@@ -64,9 +76,14 @@ const Index = () => {
     );
   }
 
+  // Show auth page if user clicked get started
+  if (showAuth && !user) {
+    return <Auth onAuthSuccess={handleAuthSuccess} />;
+  }
+
   // Show landing page if not authenticated
   if (!user) {
-    return <Landing onGetStarted={() => {}} />;
+    return <Landing onGetStarted={handleGetStarted} />;
   }
 
   // Show profile setup if no profile exists
