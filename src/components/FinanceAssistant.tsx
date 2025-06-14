@@ -9,6 +9,7 @@ import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, Target, Plus, Minus, P
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import PaycheckAllocator from "./PaycheckAllocator";
 
 interface Transaction {
   id: string;
@@ -40,6 +41,7 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showBudgetManager, setShowBudgetManager] = useState(false);
   const [showPaycheckManager, setShowPaycheckManager] = useState(false);
+  const [showPaycheckAllocator, setShowPaycheckAllocator] = useState(false);
   const [monthlyPaycheck, setMonthlyPaycheck] = useState<number>(0);
 
   // Form states
@@ -353,6 +355,50 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
+  const handleSaveAllocation = async (allocations: any[]) => {
+    try {
+      // Save allocations as budget records
+      const budgetRecords = allocations.map(allocation => ({
+        user_id: user?.id,
+        type: 'budget',
+        category: allocation.category,
+        amount: allocation.amount,
+        description: `Allocated from paycheck: ${allocation.percentage.toFixed(1)}%`,
+        recorded_at: new Date().toISOString()
+      }));
+
+      // Delete existing budgets first
+      const { error: deleteError } = await supabase
+        .from('financial_records')
+        .delete()
+        .eq('user_id', user?.id)
+        .eq('type', 'budget');
+
+      if (deleteError) throw deleteError;
+
+      // Insert new budgets
+      const { error: insertError } = await supabase
+        .from('financial_records')
+        .insert(budgetRecords);
+
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Success",
+        description: "Paycheck allocation saved as budgets",
+      });
+
+      fetchBudgets();
+    } catch (error) {
+      console.error('Error saving allocation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save allocation",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getTotalIncome = () => {
     return transactions
       .filter(t => t.type === 'income')
@@ -545,23 +591,44 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowAddTransaction(true)} className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Transaction
+              <Plus className="w-4 h-4 mr-2" />Add Transaction
             </Button>
             <Button onClick={() => setShowBudgetManager(true)} variant="outline">
-              <Target className="w-4 h-4 mr-2" />
-              Manage Budget
+              <Target className="w-4 h-4 mr-2" />Manage Budget
             </Button>
             <Button onClick={() => setShowPaycheckManager(true)} variant="outline">
-              <Wallet className="w-4 h-4 mr-2" />
-              Set Paycheck
+              <Wallet className="w-4 h-4 mr-2" />Set Paycheck
+            </Button>
+            <Button 
+              onClick={() => setShowPaycheckAllocator(true)} 
+              variant="outline"
+              disabled={monthlyPaycheck === 0}
+              className="bg-green-50 hover:bg-green-100 text-green-700"
+            >
+              <Calculator className="w-4 h-4 mr-2" />Allocate Paycheck
             </Button>
             <Button onClick={handleResetFinance} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset All
+              <RotateCcw className="w-4 h-4 mr-2" />Reset All
             </Button>
           </div>
         </div>
+
+        {/* Show message if paycheck not set */}
+        {monthlyPaycheck === 0 && (
+          <Card className="mb-8 border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <AlertTriangle className="w-5 h-5 text-orange-600" />
+                <div>
+                  <h3 className="font-semibold text-orange-800">Set Your Monthly Paycheck</h3>
+                  <p className="text-sm text-orange-700">
+                    Set your monthly paycheck to unlock AI-powered allocation features and get personalized financial advice.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Financial Advice */}
         {financialAdvice.length > 0 && (
@@ -889,6 +956,15 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Paycheck Allocator Modal */}
+        {showPaycheckAllocator && monthlyPaycheck > 0 && (
+          <PaycheckAllocator
+            monthlyPaycheck={monthlyPaycheck}
+            onClose={() => setShowPaycheckAllocator(false)}
+            onSaveAllocation={handleSaveAllocation}
+          />
         )}
       </div>
     </div>
