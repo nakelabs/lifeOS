@@ -82,10 +82,21 @@ export const useProfile = () => {
           .select()
           .single();
       } else {
-        // Insert new profile
+        // Insert new profile - ensure name is provided
+        const profileData = {
+          id: user.id,
+          name: updates.name || 'User',
+          age: updates.age,
+          region: updates.region,
+          language: updates.language || 'english',
+          assistant_tone: updates.assistant_tone || 'friendly',
+          focus_areas: updates.focus_areas || [],
+          goals: updates.goals
+        };
+
         result = await supabase
           .from('profiles')
-          .insert({ ...updates, id: user.id })
+          .insert(profileData)
           .select()
           .single();
       }
