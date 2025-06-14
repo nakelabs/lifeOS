@@ -1,11 +1,15 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, DollarSign, BookOpen, Brain, MessageCircle, Settings, TrendingUp, Moon, Droplets } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Heart, DollarSign, BookOpen, Brain, MessageCircle, Settings, TrendingUp, Moon, Droplets, User } from "lucide-react";
 
 const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onNavigate: (section: string) => void }) => {
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? "Good morning" : currentHour < 17 ? "Good afternoon" : "Good evening";
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
 
   const summaryCards = [
     {
@@ -54,19 +58,38 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              {greeting}, {userName} 👋
-            </h1>
-            <p className="text-gray-600">Here's your focus today</p>
+          <div className="flex items-center space-x-4">
+            <Avatar 
+              className="w-12 h-12 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+              onClick={() => onNavigate("profile")}
+            >
+              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-green-500 text-white">
+                {getInitials(userName)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                {greeting}, {userName} 👋
+              </h1>
+              <p className="text-gray-600">Here's your focus today</p>
+            </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => onNavigate("settings")}
-            className="rounded-full p-3"
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => onNavigate("profile")}
+              className="rounded-full p-3"
+            >
+              <User className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => onNavigate("settings")}
+              className="rounded-full p-3"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}

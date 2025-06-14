@@ -5,13 +5,20 @@ import Dashboard from "@/components/Dashboard";
 import HealthAssistant from "@/components/HealthAssistant";
 import FinanceAssistant from "@/components/FinanceAssistant";
 import ChatAssistant from "@/components/ChatAssistant";
+import Settings from "@/components/Settings";
+import UserProfile from "@/components/UserProfile";
+import ProfileSetup from "@/components/ProfileSetup";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<string>("landing");
-  const [userName] = useState("Friend"); // This could be dynamic later
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const handleGetStarted = () => {
-    setCurrentView("dashboard");
+    if (userProfile) {
+      setCurrentView("dashboard");
+    } else {
+      setCurrentView("profile-setup");
+    }
   };
 
   const handleNavigate = (section: string) => {
@@ -22,12 +29,27 @@ const Index = () => {
     setCurrentView("dashboard");
   };
 
+  const handleProfileCreated = (profile: any) => {
+    setUserProfile(profile);
+    setCurrentView("dashboard");
+  };
+
+  const handleProfileUpdated = (updatedProfile: any) => {
+    setUserProfile(updatedProfile);
+  };
+
   const renderCurrentView = () => {
     switch (currentView) {
       case "landing":
         return <Landing onGetStarted={handleGetStarted} />;
+      case "profile-setup":
+        return <ProfileSetup onProfileCreated={handleProfileCreated} />;
       case "dashboard":
-        return <Dashboard userName={userName} onNavigate={handleNavigate} />;
+        return <Dashboard userName={userProfile?.name || "Friend"} onNavigate={handleNavigate} />;
+      case "profile":
+        return <UserProfile profile={userProfile} onBack={handleBack} onProfileUpdated={handleProfileUpdated} />;
+      case "settings":
+        return <Settings onBack={handleBack} />;
       case "health":
         return <HealthAssistant onBack={handleBack} />;
       case "finance":
@@ -35,7 +57,7 @@ const Index = () => {
       case "chat":
         return <ChatAssistant onBack={handleBack} />;
       default:
-        return <Dashboard userName={userName} onNavigate={handleNavigate} />;
+        return <Dashboard userName={userProfile?.name || "Friend"} onNavigate={handleNavigate} />;
     }
   };
 
