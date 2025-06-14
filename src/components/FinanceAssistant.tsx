@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DollarSign, Calculator, Lightbulb, Target, BarChart3, Bot, TrendingUp, PiggyBank } from "lucide-react";
+import { DollarSign, Calculator, Lightbulb, Target, BarChart3, Bot, TrendingUp, PiggyBank, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PaycheckAllocator from './PaycheckAllocator';
 import SavingsGoals from './SavingsGoals';
@@ -16,7 +16,11 @@ interface AllocationItem {
   type?: 'regular' | 'special' | 'savings';
 }
 
-const FinanceAssistant = () => {
+interface FinanceAssistantProps {
+  onBack: () => void;
+}
+
+const FinanceAssistant = ({ onBack }: FinanceAssistantProps) => {
   const { toast } = useToast();
   const [monthlyIncome, setMonthlyIncome] = useState<number>(0);
   const [savedAllocations, setSavedAllocations] = useState<AllocationItem[]>([]);
@@ -61,9 +65,21 @@ const FinanceAssistant = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Assistant</h1>
-          <p className="text-gray-600">Take control of your finances with AI-powered insights</p>
+        <div className="flex items-center justify-between">
+          <Button
+            onClick={onBack}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Finance Assistant</h1>
+            <p className="text-gray-600">Take control of your finances with AI-powered insights</p>
+          </div>
+          <div className="w-32"></div> {/* Spacer for centering */}
         </div>
 
         {/* Quick Stats */}
