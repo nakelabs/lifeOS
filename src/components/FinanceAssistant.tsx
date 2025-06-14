@@ -24,6 +24,7 @@ interface BudgetItem {
   category: string;
   budget: number;
   spent: number;
+  type?: string;
 }
 
 interface FinancialAdvice {
@@ -122,9 +123,9 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
     try {
       const { data: budgetData, error: budgetError } = await supabase
         .from('financial_records')
-        .select('category, amount')
+        .select('category, amount, type')
         .eq('user_id', user?.id)
-        .eq('type', 'budget');
+        .in('type', ['budget', 'special_goal', 'savings_goal']);
 
       if (budgetError) throw budgetError;
 
@@ -149,12 +150,12 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
       const budgetItems: BudgetItem[] = budgetData?.map(budget => ({
         category: budget.category || 'Other',
         budget: budget.amount,
-        spent: spentByCategory[budget.category || 'Other'] || 0
+        spent: spentByCategory[budget.category || 'Other'] || 0,
+        type: budget.type
       })) || [];
 
       setBudgets(budgetItems);
-      console.log('Fetched budgets:', budgetItems);
-      console.log('Spent by category:', spentByCategory);
+      console.log('Fetched budgets with types:', budgetItems);
     } catch (error) {
       console.error('Error fetching budgets:', error);
     }
@@ -357,26 +358,28 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
 
   const handleSaveAllocation = async (allocations: any[]) => {
     try {
-      // Save allocations as budget records
+      // Separate allocations by type
       const budgetRecords = allocations.map(allocation => ({
         user_id: user?.id,
-        type: 'budget',
+        type: allocation.type === 'special' ? 'special_goal' : 
+              allocation.type === 'savings' ? 'savings_goal' : 'budget',
         category: allocation.category,
         amount: allocation.amount,
-        description: `Allocated from paycheck: ${allocation.percentage.toFixed(1)}%`,
+        description: `${allocation.type === 'special' ? 'Special Goal' : 
+                      allocation.type === 'savings' ? 'Savings Goal' : 'Budget'}: ${allocation.percentage.toFixed(1)}%`,
         recorded_at: new Date().toISOString()
       }));
 
-      // Delete existing budgets first
+      // Delete existing budgets, special goals, and savings goals
       const { error: deleteError } = await supabase
         .from('financial_records')
         .delete()
         .eq('user_id', user?.id)
-        .eq('type', 'budget');
+        .in('type', ['budget', 'special_goal', 'savings_goal']);
 
       if (deleteError) throw deleteError;
 
-      // Insert new budgets
+      // Insert new allocations
       const { error: insertError } = await supabase
         .from('financial_records')
         .insert(budgetRecords);
@@ -385,7 +388,7 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
 
       toast({
         title: "Success",
-        description: "Paycheck allocation saved as budgets",
+        description: "Paycheck allocation saved successfully",
       });
 
       fetchBudgets();
@@ -735,97 +738,145 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
                   <PieChart className="w-5 h-5 mr-2 text-blue-600" />
-                  Budgets
+                  Budget Overview
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {budgets.map((item, index) => {
-                  const percentage = (item.spent / item.budget) * 100;
-                  const isOverBudget = percentage > 100;
-                  
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-700">{item.category}</span>
-                        <span className={`text-sm px-2 py-1 rounded-full ${
-                          isOverBudget ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                        }`}>
-                          ₦{item.spent.toLocaleString()} / ₦{item.budget.toLocaleString()}
-                        </span>
+                {/* Regular Budgets */}
+                <div>
+                  <h4 className="font-medium text-gray-700 mb-2 flex items-center">
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Regular Expenses
+                  </h4>
+                  {budgets.filter(item => !item.type || item.type === 'budget').map((item, index) => {
+                    const percentage = (item.spent / item.budget) * 100;
+                    const isOverBudget = percentage > 100;
+                    
+                    return (
+                      <div key={index} className="space-y-2 mb-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">{item.category}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            isOverBudget ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                          }`}>
+                            ₦{item.spent.toLocaleString()} / ₦{item.budget.toLocaleString()}
+                          </span>
+                        </div>
+                        <Progress 
+                          value={Math.min(percentage, 100)} 
+                          className="h-2"
+                        />
                       </div>
-                      <Progress 
-                        value={Math.min(percentage, 100)} 
-                        className="h-2"
-                      />
-                      {isOverBudget && (
-                        <p className="text-xs text-red-600">
-                          Over by ₦{(item.spent - item.budget).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Recent Transactions */}
-          <Card className="bg-white border-0 shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-green-600" />
-                Recent Transactions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {transactions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calculator className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-gray-600 mb-2">No transactions yet</p>
-                  <p className="text-sm text-gray-500">Add your first transaction to get started!</p>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="space-y-4 max-h-80 overflow-y-auto">
-                  {Object.entries(groupedTransactions)
-                    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                    .slice(0, 5)
-                    .map(([date, dateTransactions]) => (
-                      <div key={date}>
-                        <h3 className="text-xs font-medium text-gray-500 mb-2">
-                          {formatDate(date)}
-                        </h3>
-                        <div className="space-y-2">
-                          {dateTransactions.slice(0, 3).map((transaction) => (
-                            <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                                }`}>
-                                  {transaction.type === 'income' ? 
-                                    <TrendingUp className="w-4 h-4 text-green-600" /> : 
-                                    <TrendingDown className="w-4 h-4 text-red-600" />
-                                  }
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900 text-sm">{transaction.description || transaction.category}</p>
-                                  <p className="text-xs text-gray-500">{transaction.category}</p>
-                                </div>
-                              </div>
-                              <span className={`font-semibold ${
-                                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.type === 'income' ? '+' : '-'}₦{transaction.amount.toLocaleString()}
-                              </span>
-                            </div>
-                          ))}
+
+                {/* Special Goals */}
+                {budgets.filter(item => item.type === 'special_goal').length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center">
+                      <Target className="w-4 h-4 mr-2" />
+                      Special Goals
+                    </h4>
+                    {budgets.filter(item => item.type === 'special_goal').map((item, index) => (
+                      <div key={index} className="space-y-2 mb-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">{item.category}</span>
+                          <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700">
+                            ₦{item.budget.toLocaleString()}/month
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-purple-500 h-2 rounded-full" style={{ width: '0%' }}></div>
                         </div>
                       </div>
                     ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </div>
+                )}
+
+                {/* Savings Goals */}
+                {budgets.filter(item => item.type === 'savings_goal').length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2 flex items-center">
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Savings Goals
+                    </h4>
+                    {budgets.filter(item => item.type === 'savings_goal').map((item, index) => (
+                      <div key={index} className="space-y-2 mb-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">{item.category}</span>
+                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                            ₦{item.budget.toLocaleString()}/month
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-green-500 h-2 rounded-full" style={{ width: '0%' }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
+
+        {/* Recent Transactions */}
+        <Card className="bg-white border-0 shadow-sm mt-8">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-green-600" />
+              Recent Transactions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {transactions.length === 0 ? (
+              <div className="text-center py-8">
+                <Calculator className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-gray-600 mb-2">No transactions yet</p>
+                <p className="text-sm text-gray-500">Add your first transaction to get started!</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {Object.entries(groupedTransactions)
+                  .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+                  .slice(0, 5)
+                  .map(([date, dateTransactions]) => (
+                    <div key={date}>
+                      <h3 className="text-xs font-medium text-gray-500 mb-2">
+                        {formatDate(date)}
+                      </h3>
+                      <div className="space-y-2">
+                        {dateTransactions.slice(0, 3).map((transaction) => (
+                          <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                              }`}>
+                                {transaction.type === 'income' ? 
+                                  <TrendingUp className="w-4 h-4 text-green-600" /> : 
+                                  <TrendingDown className="w-4 h-4 text-red-600" />
+                                }
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 text-sm">{transaction.description || transaction.category}</p>
+                                <p className="text-xs text-gray-500">{transaction.category}</p>
+                              </div>
+                            </div>
+                            <span className={`font-semibold ${
+                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.type === 'income' ? '+' : '-'}₦{transaction.amount.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Reset Button */}
         <div className="mt-8 flex justify-center">
