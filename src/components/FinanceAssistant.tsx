@@ -25,6 +25,12 @@ interface BudgetItem {
   spent: number;
 }
 
+interface FinancialAdvice {
+  type: 'warning' | 'tip';
+  title: string;
+  message: string;
+}
+
 const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -97,6 +103,7 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
         }));
       
       setTransactions(validTransactions);
+      console.log('Fetched transactions:', validTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast({
@@ -144,6 +151,8 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
       })) || [];
 
       setBudgets(budgetItems);
+      console.log('Fetched budgets:', budgetItems);
+      console.log('Spent by category:', spentByCategory);
     } catch (error) {
       console.error('Error fetching budgets:', error);
     }
@@ -162,6 +171,9 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
       
       if (data) {
         setMonthlyPaycheck(data.amount);
+        console.log('Fetched monthly paycheck:', data.amount);
+      } else {
+        console.log('No paycheck data found');
       }
     } catch (error) {
       console.error('Error fetching paycheck:', error);
@@ -357,51 +369,96 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
     return getTotalIncome() - getTotalExpenses();
   };
 
-  const getFinancialAdvice = () => {
-    const advice = [];
+  const getFinancialAdvice = (): FinancialAdvice[] => {
+    const advice: FinancialAdvice[] = [];
     const totalBudget = budgets.reduce((sum, b) => sum + b.budget, 0);
     const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    const totalExpenses = getTotalExpenses();
+    
+    console.log('Financial advice calculation:', {
+      totalBudget,
+      totalSpent,
+      monthlyPaycheck,
+      totalExpenses,
+      budgets
+    });
     
     // Check for over-budget categories
-    const overBudgetCategories = budgets.filter(b => b.spent > b.budget);
+    const overBudgetCategories = budgets.filter(b => b.spent > b.budget && b.budget > 0);
     if (overBudgetCategories.length > 0) {
       advice.push({
         type: 'warning',
         title: 'Budget Alert!',
-        message: `You're over budget in ${overBudgetCategories.length} categories. Consider reducing spending in: ${overBudgetCategories.map(b => b.category).join(', ')}.`
+        message: `You're over budget in ${overBudgetCategories.length} categories: ${overBudgetCategories.map(b => b.category).join(', ')}. Consider reducing spending in these areas.`
       });
     }
 
     // Paycheck allocation advice
-    if (monthlyPaycheck > 0 && totalBudget > 0) {
-      const budgetUtilization = (totalBudget / monthlyPaycheck) * 100;
-      if (budgetUtilization > 90) {
-        advice.push({
-          type: 'warning',
-          title: 'High Budget Allocation',
-          message: `Your budgets use ${budgetUtilization.toFixed(1)}% of your paycheck. Consider the 50/30/20 rule: 50% needs, 30% wants, 20% savings.`
-        });
-      } else if (budgetUtilization < 70) {
-        advice.push({
-          type: 'tip',
-          title: 'Room for Savings',
-          message: `You're only budgeting ${budgetUtilization.toFixed(1)}% of your paycheck. Consider allocating more to savings and investments.`
-        });
+    if (monthlyPaycheck > 0) {
+      if (totalBudget > 0) {
+        const budgetUtilization = (totalBudget / monthlyPaycheck) * 100;
+        if (budgetUtilization > 90) {
+          advice.push({
+            type: 'warning',
+            title: 'High Budget Allocation',
+            message: `Your budgets use ${budgetUtilization.toFixed(1)}% of your paycheck. Consider the 50/30/20 rule: 50% needs, 30% wants, 20% savings.`
+          });
+        } else if (budgetUtilization < 70) {
+          advice.push({
+            type: 'tip',
+            title: 'Room for Savings',
+            message: `You're only budgeting ${budgetUtilization.toFixed(1)}% of your paycheck. Consider allocating more to savings and investments.`
+          });
+        }
       }
-    }
 
-    // Spending pattern advice
-    if (totalSpent > 0) {
-      const spendingRate = (totalSpent / totalBudget) * 100;
+      // Check spending against paycheck
+      const spendingRate = (totalExpenses / monthlyPaycheck) * 100;
       if (spendingRate > 80) {
         advice.push({
           type: 'warning',
           title: 'High Spending Rate',
-          message: `You've spent ${spendingRate.toFixed(1)}% of your total budget. Consider slowing down spending for the rest of the month.`
+          message: `You've spent ${spendingRate.toFixed(1)}% of your monthly paycheck. Consider tracking your expenses more carefully.`
+        });
+      } else if (spendingRate > 0 && spendingRate < 50) {
+        advice.push({
+          type: 'tip',
+          title: 'Great Spending Control',
+          message: `You've only spent ${spendingRate.toFixed(1)}% of your paycheck. You're doing great with expense management!`
         });
       }
     }
 
+    // Spending pattern advice for budgets
+    if (totalBudget > 0 && totalSpent > 0) {
+      const spendingRate = (totalSpent / totalBudget) * 100;
+      if (spendingRate > 80) {
+        advice.push({
+          type: 'warning',
+          title: 'High Budget Usage',
+          message: `You've spent ${spendingRate.toFixed(1)}% of your budgeted amounts. Consider slowing down spending for the rest of the month.`
+        });
+      }
+    }
+
+    // General advice if no specific issues
+    if (advice.length === 0) {
+      if (monthlyPaycheck > 0) {
+        advice.push({
+          type: 'tip',
+          title: 'Financial Health Check',
+          message: 'Your finances look stable! Consider setting up budgets for different categories to better track your spending patterns.'
+        });
+      } else {
+        advice.push({
+          type: 'tip',
+          title: 'Get Started',
+          message: 'Set your monthly paycheck to get personalized financial advice and better budget recommendations.'
+        });
+      }
+    }
+
+    console.log('Generated financial advice:', advice);
     return advice;
   };
 
@@ -509,6 +566,7 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
         {/* Financial Advice */}
         {financialAdvice.length > 0 && (
           <div className="mb-8 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">💡 Financial Insights</h2>
             {financialAdvice.map((advice, index) => (
               <Card key={index} className={`border-0 shadow-md ${
                 advice.type === 'warning' ? 'bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500' :
