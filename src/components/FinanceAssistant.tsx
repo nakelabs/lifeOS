@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,11 +72,25 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
         .from('financial_records')
         .select('*')
         .eq('user_id', user?.id)
+        .in('type', ['income', 'expense'])
         .order('recorded_at', { ascending: false })
         .limit(10);
 
       if (error) throw error;
-      setTransactions(data || []);
+      
+      // Filter and type-cast the data to ensure type safety
+      const validTransactions = (data || [])
+        .filter(record => record.type === 'income' || record.type === 'expense')
+        .map(record => ({
+          id: record.id,
+          type: record.type as 'income' | 'expense',
+          category: record.category || 'Other',
+          amount: record.amount,
+          description: record.description || '',
+          recorded_at: record.recorded_at || new Date().toISOString()
+        }));
+      
+      setTransactions(validTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast({
