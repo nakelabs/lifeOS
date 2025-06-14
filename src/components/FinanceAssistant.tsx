@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, Target, Plus, Minus, PieChart, Calculator } from "lucide-react";
+import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, Target, Plus, Minus, PieChart, Calculator, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -254,6 +254,39 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
     return getTotalIncome() - getTotalExpenses();
   };
 
+  const handleResetFinance = async () => {
+    if (!confirm('Are you sure you want to reset all your financial data? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('financial_records')
+        .delete()
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "All financial data has been reset",
+      });
+
+      // Refresh the data
+      setTransactions([]);
+      setBudgets([]);
+      fetchTransactions();
+      fetchBudgets();
+    } catch (error) {
+      console.error('Error resetting finance data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset financial data",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
@@ -287,6 +320,10 @@ const FinanceAssistant = ({ onBack }: { onBack: () => void }) => {
             <Button onClick={() => setShowBudgetManager(true)} variant="outline">
               <Target className="w-4 h-4 mr-2" />
               Manage Budget
+            </Button>
+            <Button onClick={handleResetFinance} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset All
             </Button>
           </div>
         </div>
