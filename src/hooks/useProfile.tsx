@@ -32,6 +32,7 @@ export const useProfile = () => {
     if (!user) return;
 
     try {
+      console.log('Fetching profile for user:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -43,6 +44,7 @@ export const useProfile = () => {
         return;
       }
 
+      console.log('Fetched profile:', data);
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -52,23 +54,54 @@ export const useProfile = () => {
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) return { error: 'No user found' };
+    if (!user) {
+      console.error('No user found for profile update');
+      return { error: 'No user found' };
+    }
 
     try {
-      const { data, error } = await supabase
+      console.log('Updating profile with:', updates);
+      console.log('User ID:', user.id);
+
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update(updates)
+        .select('*')
         .eq('id', user.id)
-        .select()
         .single();
 
+      console.log('Existing profile:', existingProfile);
+
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', user.id)
+          .select()
+          .single();
+      } else {
+        // Insert new profile
+        result = await supabase
+          .from('profiles')
+          .insert({ ...updates, id: user.id })
+          .select()
+          .single();
+      }
+
+      const { data, error } = result;
+
       if (error) {
+        console.error('Error updating profile:', error);
         return { error: error.message };
       }
 
+      console.log('Profile updated successfully:', data);
       setProfile(data);
       return { data };
     } catch (error) {
+      console.error('Error in updateProfile:', error);
       return { error: 'Failed to update profile' };
     }
   };

@@ -8,10 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, DollarSign, BookOpen, Brain, Zap, Users } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 
 const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: () => void }) => {
+  const { user } = useAuth();
   const { profile, updateProfile } = useProfile();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState({
     name: profile?.name || "",
     age: profile?.age || "",
@@ -50,8 +53,27 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: () => void }) =>
       setStep(step + 1);
     } else {
       // Save profile and complete setup
-      await updateProfile(profileData);
-      onProfileCreated();
+      setLoading(true);
+      console.log('Saving profile data:', profileData);
+      console.log('Current user:', user);
+      
+      try {
+        const result = await updateProfile(profileData);
+        console.log('Update result:', result);
+        
+        if (result?.error) {
+          console.error('Error updating profile:', result.error);
+          alert('Error saving profile: ' + result.error);
+        } else {
+          console.log('Profile saved successfully');
+          onProfileCreated();
+        }
+      } catch (error) {
+        console.error('Error in handleNext:', error);
+        alert('Error saving profile');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -207,16 +229,16 @@ const ProfileSetup = ({ onProfileCreated }: { onProfileCreated: () => void }) =>
 
           <div className="flex justify-between pt-4">
             {step > 1 && (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>
+              <Button variant="outline" onClick={() => setStep(step - 1)} disabled={loading}>
                 Back
               </Button>
             )}
             <Button 
               onClick={handleNext}
-              disabled={!canProceed()}
+              disabled={!canProceed() || loading}
               className="ml-auto bg-blue-500 hover:bg-blue-600"
             >
-              {step === 3 ? "Get Started" : "Next"}
+              {loading ? "Saving..." : step === 3 ? "Get Started" : "Next"}
             </Button>
           </div>
         </CardContent>
