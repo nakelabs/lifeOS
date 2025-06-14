@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,6 +25,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
   const heartRate = getTotalForToday('heart_rate');
   const heartRateTarget = goals.heart_rate_target;
   
+  // ... keep existing code (summaryCards array)
   const summaryCards = [
     {
       title: "Water Intake",
@@ -70,12 +70,14 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
   ];
 
   const quickActions = [
+    { icon: BookOpen, label: "Learning", action: () => onNavigate("learning"), color: "text-blue-600" },
     { icon: MessageCircle, label: "AI Chat", action: () => onNavigate("chat"), color: "text-blue-600" },
     { icon: PenTool, label: "Journal", action: () => onNavigate("journal"), color: "text-indigo-600" },
     { icon: DollarSign, label: "Finance", action: () => onNavigate("finance"), color: "text-green-600" },
     { icon: Droplets, label: "Log Water", action: () => onNavigate("health"), color: "text-cyan-600" },
     { icon: Activity, label: "Exercise", action: () => onNavigate("health"), color: "text-green-600" },
-    { icon: Target, label: "Set Goals", action: () => onNavigate("goals"), color: "text-purple-600" }
+    { icon: Target, label: "Set Goals", action: () => onNavigate("goals"), color: "text-purple-600" },
+    { icon: Brain, label: "Emotional", action: () => onNavigate("emotional"), color: "text-pink-600" }
   ];
 
   if (healthLoading || goalsLoading) {
@@ -214,7 +216,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
             <Target className="w-6 h-6 text-gray-700" />
             <h2 className="text-2xl font-bold text-gray-800">Quick Actions</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             {quickActions.map((action, index) => (
               <Button
                 key={action.label}
