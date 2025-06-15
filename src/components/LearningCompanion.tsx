@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star, Trophy } from "lucide-react";
+import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star, Trophy, Minus, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCourseRecommendations } from "@/hooks/useCourseRecommendations";
@@ -52,6 +52,10 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   const [completingCourse, setCompletingCourse] = useState<string | null>(null);
   const [completionNotes, setCompletionNotes] = useState("");
 
+  // State for progress editing
+  const [editingProgress, setEditingProgress] = useState<string | null>(null);
+  const [tempProgress, setTempProgress] = useState<number>(0);
+
   const predefinedInterests = [
     "Programming", "Web Development", "Data Science", "UI/UX Design", 
     "Digital Marketing", "Business", "Graphic Design", "Mobile Development",
@@ -78,6 +82,10 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
       setSelectedInterests(prev => [...prev, customInterest.trim()]);
       setCustomInterest("");
     }
+  };
+
+  const handleClearInterests = () => {
+    setSelectedInterests([]);
   };
 
   const handleSaveInterests = async () => {
@@ -156,10 +164,66 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     }
   };
 
-  const handleUpdateProgress = async (courseId: string, newProgress: number) => {
+  const handleStartEditProgress = (courseId: string, currentProgress: number) => {
+    setEditingProgress(courseId);
+    setTempProgress(currentProgress);
+  };
+
+  const handleCancelEditProgress = () => {
+    setEditingProgress(null);
+    setTempProgress(0);
+  };
+
+  const handleSaveProgress = async (courseId: string) => {
     const course = courses.find(c => c.id === courseId);
     if (!course) return;
 
+    const completedLessons = course.total_lessons > 0 
+      ? Math.floor((tempProgress / 100) * course.total_lessons)
+      : course.completed_lessons;
+
+    await updateCourseProgress(courseId, tempProgress, completedLessons);
+    setEditingProgress(null);
+    
+    // Check if course is completed (100%)
+    if (tempProgress === 100) {
+      // Automatically mark course as completed
+      const result = await markCourseCompleted(
+        courseId, 
+        course.title, 
+        course.total_lessons || 0
+      );
+
+      if (!result.error) {
+        setShowCelebration(true);
+        updateActivity(); // Update streak on course completion
+        
+        // Show streak celebration if user has a streak
+        if (streak && streak.current_streak > 1) {
+          setTimeout(() => {
+            showStreakCelebration(streak.current_streak);
+          }, 2000);
+        }
+
+        toast({
+          title: "🎉 Course Completed!",
+          description: `Congratulations! "${course.title}" has been completed and added to your records.`,
+        });
+      }
+    } else {
+      toast({
+        title: "Progress Updated!",
+        description: `Course progress updated to ${tempProgress}%`,
+      });
+      updateActivity(); // Update streak on progress update
+    }
+  };
+
+  const handleQuickProgressUpdate = async (courseId: string, increment: number) => {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+
+    const newProgress = Math.min(100, Math.max(0, course.progress + increment));
     const completedLessons = course.total_lessons > 0 
       ? Math.floor((newProgress / 100) * course.total_lessons)
       : course.completed_lessons;
@@ -281,7 +345,18 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
 
               {selectedInterests.length > 0 && (
                 <div className="space-y-3">
-                  <p className="font-medium text-gray-700">Selected interests:</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-700">Selected interests:</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleClearInterests}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Clear All
+                    </Button>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {selectedInterests.map((interest) => (
                       <Badge key={interest} variant="secondary" className="px-3 py-1">
@@ -550,7 +625,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                               )}
                             </div>
                             
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               <div className="flex justify-between text-sm font-medium">
                                 <span className="text-gray-600">
                                   {course.completed_lessons} of {course.total_lessons || 'N/A'} lessons completed
@@ -559,20 +634,84 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                               </div>
                               <Progress value={course.progress} className="h-3" />
                               
-                              <div className="flex items-center space-x-2">
-                                <span className="text-sm text-gray-600">Update progress:</span>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={course.progress}
-                                  onChange={(e) => {
-                                    const newProgress = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
-                                    handleUpdateProgress(course.id, newProgress);
-                                  }}
-                                  className="w-20 h-8"
-                                />
-                                <span className="text-sm text-gray-600">%</span>
+                              {/* Modern Progress Update UI */}
+                              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-gray-700">Update Progress</span>
+                                  {editingProgress === course.id ? (
+                                    <div className="flex items-center space-x-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handleCancelEditProgress}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveProgress(course.id)}
+                                        className="bg-green-600 hover:bg-green-700"
+                                      >
+                                        Save
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleStartEditProgress(course.id, course.progress)}
+                                    >
+                                      Edit
+                                    </Button>
+                                  )}
+                                </div>
+                                
+                                {editingProgress === course.id ? (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center space-x-3">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={tempProgress}
+                                        onChange={(e) => setTempProgress(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                                        className="w-20 h-8 text-center font-semibold"
+                                      />
+                                      <span className="text-sm text-gray-600">%</span>
+                                      <div className="flex-1">
+                                        <Progress value={tempProgress} className="h-2" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center space-x-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleQuickProgressUpdate(course.id, -5)}
+                                      className="w-10 h-10 p-0 rounded-full hover:bg-red-50 hover:border-red-200"
+                                      disabled={course.progress <= 0}
+                                    >
+                                      <Minus className="w-4 h-4 text-red-600" />
+                                    </Button>
+                                    
+                                    <div className="flex items-center space-x-3 px-4 py-2 bg-white rounded-lg border shadow-sm">
+                                      <span className="text-2xl font-bold text-blue-600 min-w-[3rem] text-center">
+                                        {course.progress}%
+                                      </span>
+                                    </div>
+                                    
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleQuickProgressUpdate(course.id, 5)}
+                                      className="w-10 h-10 p-0 rounded-full hover:bg-green-50 hover:border-green-200"
+                                      disabled={course.progress >= 100}
+                                    >
+                                      <Plus className="w-4 h-4 text-green-600" />
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
