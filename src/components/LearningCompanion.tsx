@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BookOpen, Star, Clock, Check, Play, Award, Target, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, BookOpen, Star, Clock, Check, Play, Award, Target, TrendingUp, Calendar, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import LessonModal from "./LessonModal";
@@ -13,6 +14,16 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<any>(null);
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [searchTopic, setSearchTopic] = useState("");
+  const [showAddCourse, setShowAddCourse] = useState(false);
+  const [newCourse, setNewCourse] = useState({
+    title: "",
+    description: "",
+    category: "",
+    difficulty: "Beginner",
+    estimatedTime: "",
+    totalLessons: ""
+  });
 
   const currentCourses = [
     {
@@ -80,44 +91,38 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     }
   ];
 
-  const availableCourses = [
-    {
-      id: "data-science",
-      title: "Introduction to Data Science",
-      category: "Technology",
-      difficulty: "Intermediate",
-      duration: "8 weeks",
-      lessons: 20,
-      rating: 4.8,
-      enrolled: false
-    },
-    {
-      id: "creative-writing",
-      title: "Creative Writing Workshop",
-      category: "Arts",
-      difficulty: "Beginner",
-      duration: "4 weeks", 
-      lessons: 12,
-      rating: 4.6,
-      enrolled: false
-    },
-    {
-      id: "project-management",
-      title: "Project Management Essentials",
-      category: "Business",
-      difficulty: "Intermediate",
-      duration: "5 weeks",
-      lessons: 15,
-      rating: 4.7,
-      enrolled: false
-    }
-  ];
-
   const achievements = [
     { id: "first-course", name: "First Course Complete", icon: "🎓", earned: true, description: "Complete your first course" },
     { id: "streak-7", name: "7-Day Streak", icon: "🔥", earned: true, description: "Study for 7 consecutive days" },
     { id: "quiz-master", name: "Quiz Master", icon: "🧠", earned: false, description: "Score 100% on 5 quizzes" },
     { id: "speed-learner", name: "Speed Learner", icon: "⚡", earned: false, description: "Complete 10 lessons in one day" }
+  ];
+
+  const courseRecommendations = [
+    {
+      topic: "programming",
+      courses: [
+        { title: "Introduction to Python Programming", description: "Learn Python basics with hands-on projects", difficulty: "Beginner", estimatedTime: "6 weeks" },
+        { title: "JavaScript for Web Development", description: "Master modern JavaScript and DOM manipulation", difficulty: "Intermediate", estimatedTime: "8 weeks" },
+        { title: "Data Structures and Algorithms", description: "Build strong programming fundamentals", difficulty: "Advanced", estimatedTime: "12 weeks" }
+      ]
+    },
+    {
+      topic: "design",
+      courses: [
+        { title: "UI/UX Design Principles", description: "Create user-friendly interfaces and experiences", difficulty: "Beginner", estimatedTime: "5 weeks" },
+        { title: "Graphic Design Fundamentals", description: "Learn design theory and Adobe Creative Suite", difficulty: "Beginner", estimatedTime: "6 weeks" },
+        { title: "Advanced Prototyping with Figma", description: "Master interactive prototypes and design systems", difficulty: "Intermediate", estimatedTime: "4 weeks" }
+      ]
+    },
+    {
+      topic: "business",
+      courses: [
+        { title: "Entrepreneurship Essentials", description: "Start and grow your own business", difficulty: "Beginner", estimatedTime: "7 weeks" },
+        { title: "Project Management Professional", description: "Learn Agile, Scrum, and traditional PM methods", difficulty: "Intermediate", estimatedTime: "10 weeks" },
+        { title: "Digital Marketing Strategy", description: "Comprehensive online marketing techniques", difficulty: "Intermediate", estimatedTime: "8 weeks" }
+      ]
+    }
   ];
 
   const handleStartLesson = (lesson: any) => {
@@ -143,16 +148,56 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     });
   };
 
-  const handleEnrollCourse = (courseId: string) => {
+  const handleSearchRecommendations = () => {
+    if (!searchTopic.trim()) {
+      toast({
+        title: "Enter a topic",
+        description: "Please enter a topic to get course recommendations.",
+      });
+      return;
+    }
+
     toast({
-      title: "Enrolled Successfully!",
-      description: "You can start learning right away.",
+      title: "Recommendations Found!",
+      description: `Here are some courses related to "${searchTopic}".`,
     });
+  };
+
+  const handleAddCustomCourse = () => {
+    if (!newCourse.title || !newCourse.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in at least the title and description.",
+      });
+      return;
+    }
+
+    toast({
+      title: "Course Added!",
+      description: `"${newCourse.title}" has been added to your learning path.`,
+    });
+
+    setNewCourse({
+      title: "",
+      description: "",
+      category: "",
+      difficulty: "Beginner",
+      estimatedTime: "",
+      totalLessons: ""
+    });
+    setShowAddCourse(false);
   };
 
   const getStreakDays = () => 7;
   const getTotalHours = () => 24.5;
   const getCertificatesEarned = () => 2;
+
+  const getRecommendationsForTopic = (topic: string) => {
+    const foundTopic = courseRecommendations.find(rec => 
+      rec.topic.toLowerCase().includes(topic.toLowerCase())
+    );
+    return foundTopic ? foundTopic.courses : [];
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -321,42 +366,89 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Available Courses */}
+          {/* Course Recommendations */}
           <Card className="border-0 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800">Discover New Courses</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
+                <Search className="w-5 h-5 mr-2" />
+                Get Course Recommendations
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {availableCourses.map((course) => (
-                  <div key={course.id} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{course.title}</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="secondary">{course.category}</Badge>
-                          <Badge variant="outline">{course.difficulty}</Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-yellow-500">
-                        <Star className="w-4 h-4 fill-current" />
-                        <span className="text-sm ml-1">{course.rating}</span>
+            <CardContent className="space-y-4">
+              <div className="flex space-x-2">
+                <Input
+                  placeholder="Enter a topic (e.g., programming, design, business)"
+                  value={searchTopic}
+                  onChange={(e) => setSearchTopic(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchRecommendations()}
+                />
+                <Button onClick={handleSearchRecommendations}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {searchTopic && getRecommendationsForTopic(searchTopic).length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-700">Recommended Courses for "{searchTopic}":</h4>
+                  {getRecommendationsForTopic(searchTopic).map((course, index) => (
+                    <div key={index} className="p-3 border border-gray-200 rounded-lg">
+                      <h5 className="font-semibold text-gray-800">{course.title}</h5>
+                      <p className="text-sm text-gray-600 mt-1">{course.description}</p>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Badge variant="outline">{course.difficulty}</Badge>
+                        <span className="text-xs text-gray-500">{course.estimatedTime}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center text-sm text-gray-600 mb-3">
-                      <span>{course.lessons} lessons</span>
-                      <span>{course.duration}</span>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => handleEnrollCourse(course.id)}
-                    >
-                      Enroll Now
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAddCourse(!showAddCourse)}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your Own Course
+                </Button>
+              </div>
+
+              {showAddCourse && (
+                <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium text-gray-700">Add Custom Course</h4>
+                  <Input
+                    placeholder="Course title"
+                    value={newCourse.title}
+                    onChange={(e) => setNewCourse({...newCourse, title: e.target.value})}
+                  />
+                  <Input
+                    placeholder="Course description"
+                    value={newCourse.description}
+                    onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Category"
+                      value={newCourse.category}
+                      onChange={(e) => setNewCourse({...newCourse, category: e.target.value})}
+                    />
+                    <Input
+                      placeholder="Estimated time"
+                      value={newCourse.estimatedTime}
+                      onChange={(e) => setNewCourse({...newCourse, estimatedTime: e.target.value})}
+                    />
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button onClick={handleAddCustomCourse} size="sm">
+                      Add Course
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowAddCourse(false)} size="sm">
+                      Cancel
                     </Button>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
