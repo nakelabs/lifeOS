@@ -34,6 +34,7 @@ const Index = () => {
   const [currentSection, setCurrentSection] = useState<Section>("dashboard");
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   // Handle navigation between sections
   const handleNavigate = (section: string) => {
@@ -57,8 +58,10 @@ const Index = () => {
     refetch();
   };
 
-  // Handle get started button click
+  // Handle get started button click (for new users only)
   const handleGetStarted = () => {
+    // Mark as new user and show auth
+    setIsNewUser(true);
     setShowAuth(true);
   };
 
@@ -67,14 +70,31 @@ const Index = () => {
     console.log('Authentication successful, checking for profile...');
     setShowAuth(false);
     // Force profile setup for new users
-    setShowProfileSetup(true);
+    if (isNewUser) {
+      setShowProfileSetup(true);
+    }
   };
+
+  // Check if user has visited before
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('hasVisitedBefore');
+    if (!hasVisited && !user) {
+      // First time visitor - they should see the landing page
+      setIsNewUser(true);
+    } else if (!user) {
+      // Returning visitor without auth - go straight to auth
+      setShowAuth(true);
+    }
+  }, [user]);
 
   // Effect to handle profile setup after authentication
   useEffect(() => {
     if (user && !profileLoading) {
       console.log('User authenticated, profile loading status:', profileLoading);
       console.log('Profile data:', profile);
+      
+      // Mark that user has visited
+      localStorage.setItem('hasVisitedBefore', 'true');
       
       if (!profile) {
         console.log('No profile found, showing profile setup');
@@ -98,13 +118,13 @@ const Index = () => {
     );
   }
 
-  // Show auth page if user clicked get started
+  // Show auth page if user clicked get started or is returning user
   if (showAuth && !user) {
     return <Auth onAuthSuccess={handleAuthSuccess} />;
   }
 
-  // Show landing page if not authenticated
-  if (!user) {
+  // Show landing page only for new users (first-time visitors)
+  if (!user && isNewUser && !showAuth) {
     return <Landing onGetStarted={handleGetStarted} />;
   }
 
