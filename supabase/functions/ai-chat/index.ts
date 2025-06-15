@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -14,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, profile, streak, healthData, financialData, learningData } = await req.json();
+    const { message, profile, streak, healthData, financialData, learningData, emotionalData } = await req.json();
     
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiApiKey) {
@@ -66,17 +65,26 @@ serve(async (req) => {
       }
     }
 
+    if (emotionalData) {
+      contextualInfo += `Emotional Wellbeing: ${emotionalData.moodStreak}-day mood tracking streak, ${emotionalData.totalMoodEntries} total mood entries. `;
+      if (emotionalData.recentMoods?.length) {
+        contextualInfo += `Recent moods: `;
+        emotionalData.recentMoods.slice(0, 5).forEach((mood: any) => {
+          contextualInfo += `${mood.mood} on ${mood.date}${mood.notes ? ` (${mood.notes.substring(0, 50)})` : ''}; `;
+        });
+      }
+    }
+
     // Create enhanced system prompt for comprehensive LifeOS assistant
-    const systemPrompt = `You are an advanced LifeOS AI assistant with comprehensive access to the user's personal data across health, finances, learning, and life goals. You provide highly personalized, data-driven advice and insights.
+    const systemPrompt = `You are an advanced LifeOS AI assistant with comprehensive access to the user's personal data across health, finances, learning, and emotional wellbeing. You provide highly personalized, data-driven advice and insights.
 
 Key capabilities:
-- Analyze patterns across health, finance, and learning data
+- Analyze patterns across health, finance, learning, and emotional data
 - Provide actionable recommendations based on real user data
-- Identify correlations between different life areas (e.g., stress vs spending, exercise vs productivity)
+- Identify correlations between different life areas (e.g., mood vs productivity, stress vs spending)
 - Create personalized plans that consider the user's actual habits and progress
-- Offer financial advice based on real spending patterns and income
-- Suggest learning paths aligned with goals and current progress
-- Provide health recommendations based on actual tracked metrics
+- Offer emotional support based on mood patterns and mental health tracking
+- Suggest wellness strategies that integrate physical and mental health
 
 ${contextualInfo ? `Complete User Context: ${contextualInfo}` : ''}
 
@@ -85,11 +93,12 @@ Guidelines:
 - Identify trends and patterns in the user's data
 - Provide actionable, specific recommendations
 - Be encouraging about progress made and realistic about areas for improvement
-- Connect insights across different life areas (health affecting finances, learning supporting goals, etc.)
+- Connect insights across different life areas (mood affecting productivity, health supporting emotional wellbeing, etc.)
 - Use the user's actual data to personalize every response
 - Be conversational, supportive, and insightful
+- Pay special attention to emotional patterns and mental health
 
-Respond with comprehensive, personalized advice that demonstrates deep understanding of the user's complete life picture.`;
+Respond with comprehensive, personalized advice that demonstrates deep understanding of the user's complete life picture including emotional wellbeing.`;
 
     // Use Gemini API with enhanced context
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
@@ -121,7 +130,7 @@ Respond with comprehensive, personalized advice that demonstrates deep understan
       console.error('Gemini API error:', errorData);
       
       // Enhanced fallback response with comprehensive data understanding
-      const fallbackResponse = generateComprehensiveFallback(message, profile, streak, healthData, financialData, learningData);
+      const fallbackResponse = generateComprehensiveFallback(message, profile, streak, healthData, financialData, learningData, emotionalData);
       
       return new Response(JSON.stringify({ response: fallbackResponse }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -139,7 +148,7 @@ Respond with comprehensive, personalized advice that demonstrates deep understan
 
     // If response is empty or too short, use enhanced fallback
     if (!aiResponse || aiResponse.length < 20) {
-      aiResponse = generateComprehensiveFallback(message, profile, streak, healthData, financialData, learningData);
+      aiResponse = generateComprehensiveFallback(message, profile, streak, healthData, financialData, learningData, emotionalData);
     }
 
     return new Response(JSON.stringify({ response: aiResponse }), {
@@ -149,15 +158,15 @@ Respond with comprehensive, personalized advice that demonstrates deep understan
   } catch (error) {
     console.error('Error in ai-chat function:', error);
     
-    // Enhanced error fallback with data awareness
+    // Enhanced error fallback with emotional data awareness
     const fallbackResponse = `Hi there! I'm experiencing some technical difficulties, but I can still provide helpful insights based on your LifeOS data!
 
 Based on your profile, here are some personalized recommendations:
-- Your current ${streak?.current_streak || 0}-day streak shows great consistency - keep building on this momentum!
-- Consider reviewing your recent patterns across health, finance, and learning for optimization opportunities
+- Your current ${streak?.current_streak || 0}-day activity streak shows great consistency - keep building on this momentum!
+- ${emotionalData?.moodStreak ? `Your ${emotionalData.moodStreak}-day mood tracking streak shows excellent emotional awareness!` : 'Consider starting mood tracking for better emotional insights'}
 - Focus on connecting your daily habits to your larger goals for maximum impact
 
-What specific area would you like personalized advice on today? I'm here to help with health optimization, financial planning, learning strategies, or goal achievement!`;
+What specific area would you like personalized advice on today? I'm here to help with health optimization, financial planning, learning strategies, emotional wellbeing, or goal achievement!`;
 
     return new Response(JSON.stringify({ 
       response: fallbackResponse
@@ -167,7 +176,7 @@ What specific area would you like personalized advice on today? I'm here to help
   }
 });
 
-function generateComprehensiveFallback(message: string, profile: any, streak: any, healthData: any, financialData: any, learningData: any): string {
+function generateComprehensiveFallback(message: string, profile: any, streak: any, healthData: any, financialData: any, learningData: any, emotionalData?: any): string {
   const userName = profile?.name || 'there';
   const currentStreak = streak?.current_streak || 0;
   const lowerMessage = message.toLowerCase();
@@ -187,6 +196,10 @@ function generateComprehensiveFallback(message: string, profile: any, streak: an
   
   if (learningData && learningData.totalCourses > 0) {
     insights.push(`You're actively learning with ${learningData.activeCourses} active courses out of ${learningData.totalCourses} total - ${learningData.averageProgress}% average progress!`);
+  }
+
+  if (emotionalData && emotionalData.moodStreak > 0) {
+    insights.push(`You're maintaining a ${emotionalData.moodStreak}-day mood tracking streak - excellent emotional self-awareness!`);
   }
 
   if (lowerMessage.includes('overall') || lowerMessage.includes('analyze') || lowerMessage.includes('progress')) {
@@ -237,6 +250,21 @@ What specific health area would you like personalized advice on?`;
 Would you like specific budgeting advice based on your spending patterns?`;
   }
   
+  if (lowerMessage.includes('emotional') || lowerMessage.includes('mood') || lowerMessage.includes('mental')) {
+    const emotionalInsight = emotionalData && emotionalData.moodStreak > 0 ? 
+      `Your ${emotionalData.moodStreak}-day mood tracking streak shows great emotional awareness!` :
+      "Starting mood tracking can provide valuable insights into your emotional patterns.";
+    
+    return `Hello ${userName}! ${emotionalInsight}
+
+🧠 **Emotional Wellbeing Insights:**
+- Your ${currentStreak}-day activity streak supports mental health through consistent habits
+- Regular mood tracking helps identify patterns and triggers
+- Consider how your physical health and activities affect your emotional state
+
+What aspect of emotional wellbeing would you like to explore further?`;
+  }
+  
   // Default comprehensive response
   return `Hello ${userName}! I have access to your complete LifeOS profile and I'm here to provide personalized insights across all areas of your life.
 
@@ -249,6 +277,7 @@ Would you like specific budgeting advice based on your spending patterns?`;
 - Personalized health, finance, and learning recommendations
 - Goal optimization based on your patterns and progress
 - Connecting insights across different life areas
+- Emotional support and wellness strategies
 
 What specific area would you like me to analyze and provide personalized advice on today?`;
 }

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { useUserStreaks } from "@/hooks/useUserStreaks";
 import { useHealthData } from "@/hooks/useHealthData";
 import { useFinancialData } from "@/hooks/useFinancialData";
 import { useLearningData } from "@/hooks/useLearningData";
+import { useEmotionalData } from "@/hooks/useEmotionalData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -21,12 +21,13 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
   const { healthData } = useHealthData();
   const { financialData, getTotalIncome, getTotalExpenses, getNetWorth } = useFinancialData();
   const { courses, completions, getTotalProgress } = useLearningData();
+  const { moodEntries, getMoodStreak } = useEmotionalData();
   const { toast } = useToast();
   
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: `Hello ${profile?.name || 'there'}! I'm your enhanced LifeOS AI assistant with full access to your health, finance, and learning data. I can provide comprehensive insights and personalized advice based on your complete profile. How can I help you today? 😊`,
+      content: `Hello ${profile?.name || 'there'}! I'm your enhanced LifeOS AI assistant with full access to your health, finance, learning, and emotional data. I can provide comprehensive insights and personalized advice based on your complete profile. How can I help you today? 😊`,
       timestamp: "Just now"
     }
   ]);
@@ -37,7 +38,8 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
     "Create a health plan based on my data",
     "Recommend learning paths for my goals",
     "What should I focus on this week?",
-    "How can I improve my financial wellness?"
+    "How can I improve my financial wellness?",
+    "What's my current mood streak?"
   ];
 
   const handleSendMessage = async () => {
@@ -71,6 +73,11 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
           completedCourses: completions?.length || 0,
           averageProgress: getTotalProgress(),
           recentCourses: courses?.slice(0, 3)
+        },
+        emotionalSummary: {
+          moodStreak: getMoodStreak(),
+          recentMoods: moodEntries?.slice(0, 7),
+          totalMoodEntries: moodEntries?.length || 0
         }
       };
 
@@ -83,7 +90,8 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
           streak: streak,
           healthData: healthData?.slice(0, 10),
           financialData: comprehensiveData.financialSummary,
-          learningData: comprehensiveData.learningSummary
+          learningData: comprehensiveData.learningSummary,
+          emotionalData: comprehensiveData.emotionalSummary
         }
       });
 
@@ -152,7 +160,7 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
         </div>
 
         {/* Data Status Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4 text-center">
               <div className="text-sm font-medium text-blue-800">Health Data</div>
@@ -175,6 +183,12 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
             <CardContent className="p-4 text-center">
               <div className="text-sm font-medium text-orange-800">Current Streak</div>
               <div className="text-lg font-bold text-orange-900">{streak?.current_streak || 0} days</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-pink-50 border-pink-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-sm font-medium text-pink-800">Mood Streak</div>
+              <div className="text-lg font-bold text-pink-900">{getMoodStreak()} days</div>
             </CardContent>
           </Card>
         </div>
