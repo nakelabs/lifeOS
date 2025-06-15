@@ -33,6 +33,7 @@ const Index = () => {
   const { profile, loading: profileLoading, refetch } = useProfile();
   const [currentSection, setCurrentSection] = useState<Section>("dashboard");
   const [showAuth, setShowAuth] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   // Handle navigation between sections
   const handleNavigate = (section: string) => {
@@ -46,7 +47,9 @@ const Index = () => {
 
   // Handle profile creation
   const handleProfileCreated = () => {
+    console.log('Profile created, refetching profile data...');
     refetch();
+    setShowProfileSetup(false);
   };
 
   // Handle profile updates
@@ -61,11 +64,30 @@ const Index = () => {
 
   // Handle successful authentication
   const handleAuthSuccess = () => {
+    console.log('Authentication successful, checking for profile...');
     setShowAuth(false);
+    // Force profile setup for new users
+    setShowProfileSetup(true);
   };
 
+  // Effect to handle profile setup after authentication
+  useEffect(() => {
+    if (user && !profileLoading) {
+      console.log('User authenticated, profile loading status:', profileLoading);
+      console.log('Profile data:', profile);
+      
+      if (!profile) {
+        console.log('No profile found, showing profile setup');
+        setShowProfileSetup(true);
+      } else {
+        console.log('Profile exists, hiding profile setup');
+        setShowProfileSetup(false);
+      }
+    }
+  }, [user, profile, profileLoading]);
+
   // Show loading state while checking auth
-  if (authLoading || profileLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
@@ -86,9 +108,21 @@ const Index = () => {
     return <Landing onGetStarted={handleGetStarted} />;
   }
 
-  // Show profile setup if no profile exists
-  if (!profile) {
+  // Show profile setup if explicitly requested or no profile exists
+  if (showProfileSetup || (!profileLoading && !profile)) {
     return <ProfileSetup onProfileCreated={handleProfileCreated} />;
+  }
+
+  // Show loading while profile is being fetched
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Setting up your profile...</p>
+        </div>
+      </div>
+    );
   }
 
   // Render the appropriate section
@@ -121,7 +155,7 @@ const Index = () => {
       default:
         return (
           <Dashboard 
-            userName={profile.name} 
+            userName={profile?.name || 'User'} 
             onNavigate={handleNavigate}
           />
         );

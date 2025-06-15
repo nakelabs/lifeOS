@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 
 interface AuthProps {
   onAuthSuccess: (user: User) => void;
@@ -18,12 +18,14 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        console.log('Existing session found, calling onAuthSuccess');
         onAuthSuccess(session.user);
       }
     };
@@ -31,6 +33,7 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
       if (session?.user) {
         onAuthSuccess(session.user);
       }
@@ -43,10 +46,12 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccessMessage("");
 
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    console.log('Attempting signup with email:', email);
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -55,9 +60,18 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
     });
 
     if (error) {
+      console.error('Signup error:', error);
       setError(error.message);
-    } else {
-      setError("Check your email for the confirmation link!");
+    } else if (data.user) {
+      console.log('Signup successful:', data.user.id);
+      if (data.user.email_confirmed_at) {
+        // User is immediately confirmed, proceed to profile setup
+        setSuccessMessage("Account created successfully! Setting up your profile...");
+        setTimeout(() => onAuthSuccess(data.user), 1000);
+      } else {
+        // User needs to confirm email
+        setSuccessMessage("Please check your email and click the confirmation link to complete your registration.");
+      }
     }
     setLoading(false);
   };
@@ -66,14 +80,21 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccessMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    console.log('Attempting signin with email:', email);
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      console.error('Signin error:', error);
       setError(error.message);
+    } else if (data.user) {
+      console.log('Signin successful:', data.user.id);
+      setSuccessMessage("Welcome back! Redirecting...");
+      setTimeout(() => onAuthSuccess(data.user), 1000);
     }
     setLoading(false);
   };
@@ -190,6 +211,13 @@ const Auth = ({ onAuthSuccess }: AuthProps) => {
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center space-x-2">
               <AlertCircle className="h-4 w-4 text-red-500" />
               <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <p className="text-sm text-green-700">{successMessage}</p>
             </div>
           )}
         </CardContent>
