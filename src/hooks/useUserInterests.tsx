@@ -20,6 +20,7 @@ export const useUserInterests = () => {
 
   const fetchUserInterests = async () => {
     if (!user) {
+      console.log('No user found, clearing interests');
       setInterests([]);
       setLoading(false);
       return;
@@ -27,21 +28,32 @@ export const useUserInterests = () => {
 
     try {
       console.log('Fetching user interests for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_interests')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching user interests:', error);
+        toast({
+          title: "Database Error",
+          description: `Failed to fetch interests: ${error.message}`,
+          variant: "destructive",
+        });
         return;
       }
 
-      console.log('Fetched user interests:', data);
+      console.log('Successfully fetched user interests:', data?.interests?.length || 0);
       setInterests(data?.interests || []);
     } catch (error) {
       console.error('Error in fetchUserInterests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load user interests",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -50,22 +62,28 @@ export const useUserInterests = () => {
   const updateUserInterests = async (newInterests: string[]) => {
     if (!user) {
       toast({
-        title: "Error",
+        title: "Authentication Required",
         description: "You must be logged in to save interests",
         variant: "destructive",
       });
       return { error: 'Not authenticated' };
     }
 
+    // Clean and validate interests
+    const cleanedInterests = newInterests
+      .filter(interest => interest && interest.trim())
+      .map(interest => interest.trim())
+      .filter((interest, index, array) => array.indexOf(interest) === index); // Remove duplicates
+
     try {
-      console.log('Updating user interests:', newInterests);
+      console.log('Updating user interests:', cleanedInterests);
       
-      // First, try to update existing record
+      // Check if user interests record exists
       const { data: existingData } = await supabase
         .from('user_interests')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       let result;
       if (existingData) {
@@ -73,7 +91,7 @@ export const useUserInterests = () => {
         result = await supabase
           .from('user_interests')
           .update({
-            interests: newInterests,
+            interests: cleanedInterests,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id)
@@ -85,7 +103,7 @@ export const useUserInterests = () => {
           .from('user_interests')
           .insert({
             user_id: user.id,
-            interests: newInterests
+            interests: cleanedInterests
           })
           .select()
           .single();
@@ -96,24 +114,35 @@ export const useUserInterests = () => {
       if (error) {
         console.error('Error updating user interests:', error);
         toast({
-          title: "Error",
-          description: "Failed to save interests",
+          title: "Update Failed",
+          description: `Failed to save interests: ${error.message}`,
           variant: "destructive",
         });
         return { error: error.message };
       }
 
-      console.log('User interests updated:', data);
-      setInterests(newInterests);
+      console.log('User interests updated successfully:', data);
+      setInterests(cleanedInterests);
+      
       toast({
         title: "Success!",
-        description: "Your interests have been saved",
+        description: `Your interests have been saved (${cleanedInterests.length} items)`,
       });
+      
       return { data };
     } catch (error) {
       console.error('Error in updateUserInterests:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update interests",
+        variant: "destructive",
+      });
       return { error: 'Failed to update interests' };
     }
+  };
+
+  const clearUserInterests = async () => {
+    return updateUserInterests([]);
   };
 
   useEffect(() => {
@@ -124,6 +153,7 @@ export const useUserInterests = () => {
     interests,
     loading,
     updateUserInterests,
+    clearUserInterests,
     refetch: fetchUserInterests,
   };
 };

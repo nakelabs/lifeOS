@@ -24,6 +24,7 @@ export const useUserStreaks = () => {
 
   const fetchStreak = async () => {
     if (!user) {
+      console.log('No user found, clearing streak data');
       setStreak(null);
       setLoading(false);
       return;
@@ -31,14 +32,20 @@ export const useUserStreaks = () => {
 
     try {
       console.log('Fetching user streak for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_streaks')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching streak:', error);
+        toast({
+          title: "Database Error",
+          description: `Failed to fetch streak data: ${error.message}`,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -46,39 +53,65 @@ export const useUserStreaks = () => {
       setStreak(data || null);
     } catch (error) {
       console.error('Error in fetchStreak:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load streak information",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const updateActivity = async () => {
-    if (!user) return { error: 'Not authenticated' };
+    if (!user) {
+      console.log('No user authenticated for activity update');
+      return { error: 'Not authenticated' };
+    }
 
     try {
-      console.log('Updating user activity streak');
+      console.log('Updating user activity streak for user:', user.id);
+      
       const { error } = await supabase.rpc('update_user_streak', {
         p_user_id: user.id
       });
 
       if (error) {
-        console.error('Error updating streak:', error);
+        console.error('RPC error updating streak:', error);
+        toast({
+          title: "Update Failed",
+          description: `Failed to update streak: ${error.message}`,
+          variant: "destructive",
+        });
         return { error: error.message };
       }
 
       console.log('Activity streak updated successfully');
-      await fetchStreak(); // Refresh streak data
+      
+      // Refresh streak data after update
+      setTimeout(() => {
+        fetchStreak();
+      }, 100);
+      
       return { success: true };
     } catch (error) {
       console.error('Error in updateActivity:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update activity streak",
+        variant: "destructive",
+      });
       return { error: 'Failed to update activity' };
     }
   };
 
   const showStreakCelebration = (streakNumber: number) => {
     if (streakNumber > 1) {
+      const emoji = streakNumber >= 7 ? '🔥🔥🔥' : streakNumber >= 3 ? '🔥🔥' : '🔥';
       toast({
-        title: `🔥 ${streakNumber} Day Streak!`,
+        title: `${emoji} ${streakNumber} Day Streak!`,
         description: `Amazing! You're on fire with ${streakNumber} consecutive days of learning!`,
+        duration: 5000,
       });
     }
   };
