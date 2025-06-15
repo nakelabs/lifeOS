@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star, Trophy, Minus, RotateCcw } from "lucide-react";
+import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star, Trophy, Minus, RotateCcw, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCourseRecommendations } from "@/hooks/useCourseRecommendations";
@@ -61,6 +61,18 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     "Digital Marketing", "Business", "Graphic Design", "Mobile Development",
     "Machine Learning", "Cybersecurity", "Project Management", "Photography"
   ];
+
+  // Add clear history function
+  const handleClearHistory = async () => {
+    if (window.confirm("Are you sure you want to clear all your learning progress? This action cannot be undone.")) {
+      // This would require a database function to clear all user's learning data
+      // For now, we'll just show a toast
+      toast({
+        title: "Clear History",
+        description: "This feature will be implemented to clear all learning progress",
+      });
+    }
+  };
 
   // Update activity on component mount
   useEffect(() => {
@@ -241,19 +253,16 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
 
       if (!result.error) {
         setShowCelebration(true);
+        setCompletingCourse(null);
+        setCompletionNotes("");
         updateActivity(); // Update streak on course completion
-        
+      
         // Show streak celebration if user has a streak
         if (streak && streak.current_streak > 1) {
           setTimeout(() => {
             showStreakCelebration(streak.current_streak);
           }, 2000);
         }
-
-        toast({
-          title: "🎉 Course Completed!",
-          description: `Congratulations! "${course.title}" has been completed and added to your records.`,
-        });
       }
     } else {
       toast({
@@ -351,10 +360,10 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                       variant="outline" 
                       size="sm" 
                       onClick={handleClearInterests}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-3 text-xs"
                     >
-                      <RotateCcw className="w-4 h-4 mr-1" />
-                      Clear All
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Clear
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -428,6 +437,14 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
             >
               <Trophy className="w-4 h-4 mr-2" />
               Records
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleClearHistory}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear History
             </Button>
           </div>
         </div>
