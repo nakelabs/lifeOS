@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,6 +14,32 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  // Daily inspirational messages that rotate based on the date
+  const inspirationalMessages = [
+    "Every small step you take today builds the foundation for tomorrow's success. Your personalized goals are designed just for you—progress isn't about perfection, it's about consistency. You've got this! 🌟",
+    "Today is a fresh start and a new opportunity to become the person you aspire to be. Remember, every expert was once a beginner. Keep moving forward! 💪",
+    "Your potential is endless, and your determination is your superpower. Small actions today create massive changes tomorrow. Believe in yourself! ✨",
+    "Success isn't about perfection—it's about progress. Each habit you build, each goal you pursue, is shaping your best self. Keep going! 🚀",
+    "The journey of a thousand miles begins with a single step. You're already on the path to greatness by being here today. Trust the process! 🌱",
+    "Every challenge you face is an opportunity to grow stronger. Your future self is counting on the choices you make today. Make them count! 💎",
+    "Consistency beats perfection every time. Those small daily actions you're taking? They're building something incredible. Stay committed! 🔥",
+    "You have within you right now, everything you need to deal with whatever the world can throw at you. Your strength is greater than any struggle! 🦋",
+    "Progress, not perfection, is the goal. Every step forward, no matter how small, is a victory worth celebrating. Keep shining! ⭐",
+    "Your dreams are valid, your goals are achievable, and your potential is limitless. Today is another chance to prove it to yourself! 🌈",
+    "The best investment you can make is in yourself. Every moment you spend improving is a moment that pays dividends for life. You're worth it! 💰",
+    "Resilience is your secret weapon. Every setback is a setup for a comeback. Your story is still being written—make it amazing! 📖",
+    "Small daily improvements over time lead to stunning results. You're building something beautiful with your consistent efforts. Keep building! 🏗️",
+    "Your mindset shapes your reality. Choose thoughts that empower you, habits that serve you, and goals that inspire you. You're in control! 🧠",
+    "Excellence is not a destination but a journey. Every day you choose to grow, you're choosing excellence. That choice matters! 🎯"
+  ];
+
+  // Get today's message based on the current date
+  const getDailyMessage = () => {
+    const today = new Date();
+    const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    return inspirationalMessages[dayOfYear % inspirationalMessages.length];
   };
 
   // Get real health data with personalized goals
@@ -232,7 +259,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
           </div>
         </div>
 
-        {/* Enhanced Daily Motivation */}
+        {/* Enhanced Daily Motivation with rotating message */}
         <Card className="border-0 shadow-lg bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-l-amber-400 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200/20 rounded-full -mr-10 -mt-10"></div>
           <CardContent className="p-8 text-center relative z-10">
@@ -241,7 +268,7 @@ const Dashboard = ({ userName = "Friend", onNavigate }: { userName?: string, onN
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-3">Daily Inspiration</h3>
             <p className="text-gray-700 text-lg leading-relaxed max-w-2xl mx-auto">
-              "Every small step you take today builds the foundation for tomorrow's success. Your personalized goals are designed just for you—progress isn't about perfection, it's about consistency. You've got this! 🌟"
+              {getDailyMessage()}
             </p>
           </CardContent>
         </Card>
