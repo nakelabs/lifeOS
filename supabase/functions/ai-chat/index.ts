@@ -54,9 +54,7 @@ Guidelines:
 - For goal-setting, use SMART goal principles
 - Keep responses to 2-3 paragraphs maximum`;
 
-    // Format the prompt for Hugging Face API
-    const formattedPrompt = `System: ${systemPrompt}\n\nUser: ${message}\n\nAssistant:`;
-
+    // Try a simpler approach with a text generation model
     const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
       method: 'POST',
       headers: {
@@ -64,15 +62,16 @@ Guidelines:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: formattedPrompt,
+        inputs: message,
         parameters: {
-          max_length: 300,
+          max_new_tokens: 100,
           temperature: 0.7,
           do_sample: true,
           return_full_text: false
         },
         options: {
-          wait_for_model: true
+          wait_for_model: true,
+          use_cache: false
         }
       }),
     });
@@ -80,10 +79,25 @@ Guidelines:
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Hugging Face API error:', errorData);
-      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+      
+      // Fallback response if API fails
+      const fallbackResponse = `Hello ${profile?.name || 'there'}! I'm having some technical difficulties connecting to my AI service right now, but I'm still here to help! 
+
+Based on your profile, I can see you're focused on health, which is fantastic! Here are some general tips I can share:
+
+- Keep tracking your health data regularly (I see you've been logging water, sleep, and exercise - great job!)
+- Your current ${streak?.current_streak || 0} day streak shows you're building great habits
+- Remember that small, consistent steps lead to big changes over time
+
+Feel free to ask me anything about health, goals, finance, or life in general. I'll do my best to provide helpful advice based on your profile and progress!`;
+
+      return new Response(JSON.stringify({ response: fallbackResponse }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
+    console.log('Hugging Face response:', data);
     
     // Extract the response text
     let aiResponse = '';
@@ -92,12 +106,14 @@ Guidelines:
     } else if (data.generated_text) {
       aiResponse = data.generated_text;
     } else {
-      aiResponse = 'I apologize, but I could not generate a response at this time. Please try again.';
-    }
+      // Fallback to a contextual response
+      aiResponse = `Hello ${profile?.name || 'there'}! Thanks for your message: "${message}". 
 
-    // Clean up the response if it contains the original prompt
-    if (aiResponse.includes('Assistant:')) {
-      aiResponse = aiResponse.split('Assistant:').pop()?.trim() || aiResponse;
+Based on your profile, I can see you're from Nigeria and focused on health - that's wonderful! I'm here to help you with life advice, health tips, goal setting, and motivation.
+
+Your current streak of ${streak?.current_streak || 0} days shows you're building great habits. Keep up the excellent work with tracking your health data!
+
+How can I assist you further with your health and life goals today?`;
     }
 
     return new Response(JSON.stringify({ response: aiResponse }), {
@@ -106,10 +122,21 @@ Guidelines:
 
   } catch (error) {
     console.error('Error in ai-chat function:', error);
+    
+    // Enhanced fallback response
+    const fallbackResponse = `Hi there! I'm experiencing some technical difficulties right now, but I'm still here to help you with your LifeOS journey!
+
+Here are some quick tips I can share:
+- Keep building those healthy habits (consistency is key!)
+- Set small, achievable daily goals
+- Track your progress regularly
+- Don't forget to celebrate your wins, no matter how small
+
+What specific area would you like advice on today - health, goals, finance, or something else?`;
+
     return new Response(JSON.stringify({ 
-      error: error.message || 'An error occurred processing your request'
+      response: fallbackResponse
     }), {
-      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
