@@ -36,7 +36,7 @@ export const useEmotionalData = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
-        .limit(30); // Last 30 entries
+        .limit(30);
 
       if (error) {
         console.error('Error fetching mood entries:', error);
@@ -57,26 +57,37 @@ export const useEmotionalData = () => {
 
     try {
       const today = new Date().toISOString().split('T')[0];
+      console.log('Saving mood entry:', { mood, notes, date: today, user_id: user.id });
       
       // Check if entry for today already exists
-      const { data: existingEntry } = await supabase
+      const { data: existingEntry, error: fetchError } = await supabase
         .from('mood_entries' as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error checking existing entry:', fetchError);
+      }
 
       let result;
-      if (existingEntry && !('error' in existingEntry)) {
+      if (existingEntry) {
         // Update existing entry
+        console.log('Updating existing entry:', existingEntry.id);
         result = await supabase
           .from('mood_entries' as any)
-          .update({ mood, notes: notes || null })
-          .eq('id', (existingEntry as any).id)
+          .update({ 
+            mood, 
+            notes: notes || null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingEntry.id)
           .select()
           .single();
       } else {
         // Create new entry
+        console.log('Creating new entry');
         result = await supabase
           .from('mood_entries' as any)
           .insert({
@@ -96,8 +107,8 @@ export const useEmotionalData = () => {
         return { error: error.message };
       }
 
-      console.log('Mood entry saved:', data);
-      fetchMoodEntries(); // Refresh the list
+      console.log('Mood entry saved successfully:', data);
+      await fetchMoodEntries(); // Refresh the list
       return { data };
     } catch (error) {
       console.error('Error in saveMoodEntry:', error);

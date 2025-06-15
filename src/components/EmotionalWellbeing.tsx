@@ -6,11 +6,13 @@ import { ArrowLeft, Heart, BookOpen, Smile, Frown, Meh, Sun, Cloud } from "lucid
 import { useState, useEffect } from "react";
 import { useEmotionalData } from "@/hooks/useEmotionalData";
 import { useToast } from "@/components/ui/use-toast";
+import MindfulnessTimer from "./MindfulnessTimer";
 
 const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
   const [selectedMood, setSelectedMood] = useState<string>("");
   const [journalEntry, setJournalEntry] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTimer, setActiveTimer] = useState<any>(null);
   
   const { moodEntries, loading, saveMoodEntry, getTodaysMood, getMoodStreak } = useEmotionalData();
   const { toast } = useToast();
@@ -31,7 +33,84 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
     "Tomorrow is a fresh start with new possibilities"
   ];
 
-  const mindfulnessExercises = [
+  const getMoodBasedExercises = (mood: string) => {
+    const exercisesByMood = {
+      great: [
+        {
+          title: "Gratitude Reflection",
+          description: "Celebrate your positive energy with gratitude",
+          duration: "5 min",
+          icon: Sun
+        },
+        {
+          title: "Energy Boost Breathing",
+          description: "Maintain your high energy with energizing breath work",
+          duration: "3 min",
+          icon: Cloud
+        }
+      ],
+      good: [
+        {
+          title: "Mindful Appreciation",
+          description: "Focus on what's going well in your life",
+          duration: "5 min",
+          icon: Sun
+        },
+        {
+          title: "Gentle Breathing",
+          description: "Simple breathing to maintain your good mood",
+          duration: "5 min",
+          icon: Cloud
+        }
+      ],
+      okay: [
+        {
+          title: "Centering Breath",
+          description: "Find your center with focused breathing",
+          duration: "7 min",
+          icon: Cloud
+        },
+        {
+          title: "Body Scan",
+          description: "Progressive relaxation to ease tension",
+          duration: "10 min",
+          icon: Heart
+        }
+      ],
+      low: [
+        {
+          title: "Calming Breath Work",
+          description: "Soothing breathing to lift your spirits",
+          duration: "10 min",
+          icon: Cloud
+        },
+        {
+          title: "Self-Compassion Meditation",
+          description: "Practice being kind to yourself",
+          duration: "8 min",
+          icon: Heart
+        }
+      ],
+      sad: [
+        {
+          title: "Healing Breath",
+          description: "Gentle breathing to process difficult emotions",
+          duration: "12 min",
+          icon: Heart
+        },
+        {
+          title: "Comfort Body Scan",
+          description: "Find physical comfort in your body",
+          duration: "15 min",
+          icon: Cloud
+        }
+      ]
+    };
+
+    return exercisesByMood[mood as keyof typeof exercisesByMood] || exercisesByMood.okay;
+  };
+
+  const currentExercises = selectedMood ? getMoodBasedExercises(selectedMood) : [
     {
       title: "5-Minute Breathing",
       description: "Simple breathing exercise to calm your mind",
@@ -78,12 +157,12 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
     }
 
     setIsSubmitting(true);
-    const { error } = await saveMoodEntry(selectedMood, journalEntry);
+    const result = await saveMoodEntry(selectedMood, journalEntry);
 
-    if (error) {
+    if (result?.error) {
       toast({
         title: "Error saving check-in",
-        description: error,
+        description: result.error,
         variant: "destructive",
       });
     } else {
@@ -94,6 +173,10 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
     }
 
     setIsSubmitting(false);
+  };
+
+  const handleStartExercise = (exercise: any) => {
+    setActiveTimer(exercise);
   };
 
   const formatMoodHistory = () => {
@@ -123,6 +206,18 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your emotional wellbeing data...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Show timer if active
+  if (activeTimer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+        <MindfulnessTimer 
+          exercise={activeTimer} 
+          onClose={() => setActiveTimer(null)} 
+        />
       </div>
     );
   }
@@ -195,11 +290,18 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
         {/* Mindfulness Exercises */}
         <Card className="mb-8 border-0 shadow-md">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Mindfulness Exercises</CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-800">
+              {selectedMood ? 'Recommended for Your Mood' : 'Mindfulness Exercises'}
+            </CardTitle>
+            {selectedMood && (
+              <p className="text-sm text-gray-600">
+                Based on feeling {moods.find(m => m.value === selectedMood)?.label.toLowerCase()}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mindfulnessExercises.map((exercise, index) => (
+              {currentExercises.map((exercise, index) => (
                 <div key={exercise.title} className="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -214,10 +316,7 @@ const EmotionalWellbeing = ({ onBack }: { onBack: () => void }) => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => toast({
-                        title: "Exercise Started",
-                        description: `Starting ${exercise.title}. Take your time and focus.`,
-                      })}
+                      onClick={() => handleStartExercise(exercise)}
                     >
                       Start
                     </Button>
