@@ -1,25 +1,33 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, BookOpen, Search, Plus, Target, TrendingUp, Calendar, ExternalLink, Clock, Star, Trophy } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useCourseRecommendations } from "@/hooks/useCourseRecommendations";
 import { useUserCourses } from "@/hooks/useUserCourses";
 import { useUserInterests } from "@/hooks/useUserInterests";
+import { useCourseCompletions } from "@/hooks/useCourseCompletions";
+import { useUserStreaks } from "@/hooks/useUserStreaks";
+import CelebrationEffect from "./CelebrationEffect";
+import RecordsSection from "./RecordsSection";
 
 const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   const { toast } = useToast();
   const { recommendations, loading: recommendationsLoading, fetchRecommendationsByTopic } = useCourseRecommendations();
   const { courses, loading: coursesLoading, createCourse, updateCourseProgress } = useUserCourses();
   const { interests, updateUserInterests } = useUserInterests();
+  const { markCourseCompleted } = useCourseCompletions();
+  const { updateActivity, showStreakCelebration, streak } = useUserStreaks();
+
+  // State for celebration
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // State for interests step
-  const [currentStep, setCurrentStep] = useState<'interests' | 'recommendations' | 'create-course' | 'tracking'>('interests');
+  const [currentStep, setCurrentStep] = useState<'interests' | 'recommendations' | 'create-course' | 'tracking' | 'records'>('interests');
   const [selectedInterests, setSelectedInterests] = useState<string[]>(interests);
   const [customInterest, setCustomInterest] = useState("");
 
@@ -40,11 +48,22 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     notes: ""
   });
 
+  // State for course completion
+  const [completingCourse, setCompletingCourse] = useState<string | null>(null);
+  const [completionNotes, setCompletionNotes] = useState("");
+
   const predefinedInterests = [
     "Programming", "Web Development", "Data Science", "UI/UX Design", 
     "Digital Marketing", "Business", "Graphic Design", "Mobile Development",
     "Machine Learning", "Cybersecurity", "Project Management", "Photography"
   ];
+
+  // Update activity on component mount
+  useEffect(() => {
+    if (interests.length > 0) {
+      updateActivity();
+    }
+  }, []);
 
   const handleInterestToggle = (interest: string) => {
     setSelectedInterests(prev => 
@@ -73,6 +92,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     const result = await updateUserInterests(selectedInterests);
     if (!result.error) {
       setCurrentStep('recommendations');
+      updateActivity(); // Update streak when saving interests
     }
   };
 
@@ -132,6 +152,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
       });
       setShowCreateCourse(false);
       setCurrentStep('tracking');
+      updateActivity(); // Update streak when creating a course
     }
   };
 
@@ -145,10 +166,44 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
 
     await updateCourseProgress(courseId, newProgress, completedLessons);
     
-    toast({
-      title: "Progress Updated!",
-      description: `Course progress updated to ${newProgress}%`,
-    });
+    // Check if course is completed (100%)
+    if (newProgress === 100) {
+      setCompletingCourse(courseId);
+    } else {
+      toast({
+        title: "Progress Updated!",
+        description: `Course progress updated to ${newProgress}%`,
+      });
+      updateActivity(); // Update streak on progress update
+    }
+  };
+
+  const handleCompleteCourse = async () => {
+    if (!completingCourse) return;
+
+    const course = courses.find(c => c.id === completingCourse);
+    if (!course) return;
+
+    const result = await markCourseCompleted(
+      completingCourse, 
+      course.title, 
+      course.total_lessons || 0, 
+      completionNotes
+    );
+
+    if (!result.error) {
+      setShowCelebration(true);
+      setCompletingCourse(null);
+      setCompletionNotes("");
+      updateActivity(); // Update streak on course completion
+      
+      // Show streak celebration if user has a streak
+      if (streak && streak.current_streak > 1) {
+        setTimeout(() => {
+          showStreakCelebration(streak.current_streak);
+        }, 2000);
+      }
+    }
   };
 
   if (interests.length === 0 && currentStep === 'interests') {
@@ -234,6 +289,11 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   // Main learning companion interface
   return (
     <div className="min-h-screen bg-gray-50">
+      <CelebrationEffect 
+        show={showCelebration} 
+        onComplete={() => setShowCelebration(false)} 
+      />
+      
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
@@ -265,8 +325,18 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
             >
               My Courses
             </Button>
+            <Button 
+              variant={currentStep === 'records' ? 'default' : 'outline'}
+              onClick={() => setCurrentStep('records')}
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Records
+            </Button>
           </div>
         </div>
+
+        {/* Records Section */}
+        {currentStep === 'records' && <RecordsSection />}
 
         {/* Course Recommendations Section */}
         {currentStep === 'recommendations' && (
@@ -498,6 +568,39 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Course Completion Modal */}
+        {completingCourse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Trophy className="w-6 h-6 mr-2 text-yellow-500" />
+                  Course Completed!
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-600">
+                  Congratulations! You've completed this course. Add any final notes about your learning experience:
+                </p>
+                <Textarea
+                  placeholder="What did you learn? Any key takeaways?"
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                />
+                <div className="flex space-x-3">
+                  <Button onClick={handleCompleteCourse} className="flex-1">
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Complete Course
+                  </Button>
+                  <Button variant="outline" onClick={() => setCompletingCourse(null)}>
+                    Cancel
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

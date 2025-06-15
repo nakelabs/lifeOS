@@ -9,6 +9,50 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      course_completions: {
+        Row: {
+          completed_at: string
+          course_id: string
+          course_title: string
+          created_at: string
+          duration_taken: string | null
+          final_notes: string | null
+          id: string
+          total_lessons: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          course_id: string
+          course_title: string
+          created_at?: string
+          duration_taken?: string | null
+          final_notes?: string | null
+          id?: string
+          total_lessons?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          duration_taken?: string | null
+          final_notes?: string | null
+          id?: string
+          total_lessons?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_completions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "user_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_recommendations: {
         Row: {
           created_at: string
@@ -297,12 +341,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          streak_start_date: string | null
+          total_active_days: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          streak_start_date?: string | null
+          total_active_days?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          streak_start_date?: string | null
+          total_active_days?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_user_streak: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
