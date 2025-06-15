@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      course_recommendations: {
+        Row: {
+          created_at: string
+          description: string
+          difficulty: string
+          estimated_duration: string
+          id: string
+          skills: string[] | null
+          title: string
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          difficulty: string
+          estimated_duration: string
+          id?: string
+          skills?: string[] | null
+          title: string
+          topic: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          difficulty?: string
+          estimated_duration?: string
+          id?: string
+          skills?: string[] | null
+          title?: string
+          topic?: string
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           amount: number
@@ -177,6 +210,90 @@ export type Database = {
           name?: string
           region?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_courses: {
+        Row: {
+          completed_lessons: number | null
+          course_url: string | null
+          created_at: string
+          description: string
+          difficulty: string | null
+          duration: string | null
+          id: string
+          instructor: string | null
+          notes: string | null
+          progress: number | null
+          start_date: string | null
+          status: string | null
+          target_completion_date: string | null
+          title: string
+          total_lessons: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_lessons?: number | null
+          course_url?: string | null
+          created_at?: string
+          description: string
+          difficulty?: string | null
+          duration?: string | null
+          id?: string
+          instructor?: string | null
+          notes?: string | null
+          progress?: number | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title: string
+          total_lessons?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_lessons?: number | null
+          course_url?: string | null
+          created_at?: string
+          description?: string
+          difficulty?: string | null
+          duration?: string | null
+          id?: string
+          instructor?: string | null
+          notes?: string | null
+          progress?: number | null
+          start_date?: string | null
+          status?: string | null
+          target_completion_date?: string | null
+          title?: string
+          total_lessons?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_interests: {
+        Row: {
+          created_at: string
+          id: string
+          interests: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interests?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interests?: string[]
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
