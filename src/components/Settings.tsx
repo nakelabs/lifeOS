@@ -27,10 +27,10 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
   const { moodEntries } = useEmotionalData();
   const { financialData } = useFinancialData();
   const { journalEntries } = useJournalData();
-  const { userCourses } = useLearningData();
+  const { courses } = useLearningData();
   const { completions } = useCourseCompletions();
-  const { streaks } = useUserStreaks();
-  const { healthGoals } = useHealthGoals();
+  const { streak } = useUserStreaks();
+  const { goals } = useHealthGoals();
   const { toast } = useToast();
 
   const [userName, setUserName] = useState(profile?.name || "Friend");
@@ -74,13 +74,13 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
       const userData = {
         profile: profile,
         healthData: healthData,
-        healthGoals: healthGoals,
+        healthGoals: goals,
         moodEntries: moodEntries,
         journalEntries: journalEntries,
         financialData: financialData,
-        userCourses: userCourses,
+        userCourses: courses,
         courseCompletions: completions,
-        userStreaks: streaks,
+        userStreaks: streak,
         exportDate: new Date().toISOString(),
         userId: user.id
       };
