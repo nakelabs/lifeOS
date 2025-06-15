@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Save, X, Heart, DollarSign, BookOpen, Brain, Zap, Users, LogOut } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserStreaks } from "@/hooks/useUserStreaks";
+import { useCourseCompletions } from "@/hooks/useCourseCompletions";
+import { useHealthData } from "@/hooks/useHealthData";
 
 const UserProfile = ({ 
   profile, 
@@ -21,6 +24,9 @@ const UserProfile = ({
 }) => {
   const { updateProfile } = useProfile();
   const { signOut } = useAuth();
+  const { streak, loading: streakLoading } = useUserStreaks();
+  const { completions, loading: completionsLoading } = useCourseCompletions();
+  const { healthData, loading: healthLoading } = useHealthData();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
 
@@ -62,6 +68,15 @@ const UserProfile = ({
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+
+  // Calculate actual journey stats
+  const journeyStats = {
+    activeDays: streak?.total_active_days || 0,
+    goalsAchieved: completions?.length || 0,
+    currentStreak: streak?.current_streak || 0
+  };
+
+  const isDataLoading = streakLoading || completionsLoading || healthLoading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -209,26 +224,32 @@ const UserProfile = ({
                 </CardContent>
               </Card>
 
-              {/* Stats */}
+              {/* Journey Stats - Now with real data */}
               <Card className="border-0 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-gray-800">Your Journey</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-blue-500">7</div>
-                      <div className="text-sm text-gray-600">Days Active</div>
+                  {isDataLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-green-500">12</div>
-                      <div className="text-sm text-gray-600">Goals Achieved</div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold text-blue-500">{journeyStats.activeDays}</div>
+                        <div className="text-sm text-gray-600">Days Active</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-green-500">{journeyStats.goalsAchieved}</div>
+                        <div className="text-sm text-gray-600">Courses Completed</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-purple-500">{journeyStats.currentStreak}</div>
+                        <div className="text-sm text-gray-600">Current Streak</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-purple-500">5</div>
-                      <div className="text-sm text-gray-600">Streaks Active</div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
