@@ -70,7 +70,7 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
     setIsExporting(true);
     
     try {
-      // Collect all user data including missing tables
+      // Collect all user data from all tables
       const userData = {
         profile: profile,
         healthData: healthData,
@@ -119,7 +119,7 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
     setIsDeleting(true);
     
     try {
-      // Delete user data from all tables manually (including missing ones)
+      // Delete user data from all tables in correct order to avoid foreign key constraints
       await supabase.from('course_completions').delete().eq('user_id', user.id);
       await supabase.from('user_streaks').delete().eq('user_id', user.id);
       await supabase.from('mood_entries').delete().eq('user_id', user.id);
