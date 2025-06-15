@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,8 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
   const { moodEntries } = useEmotionalData();
   const { financialData } = useFinancialData();
   const { journalEntries } = useJournalData();
-  const { courses } = useLearningData();
-  const { completions } = useCourseCompletions();
+  const { courses, completions } = useLearningData();
+  const { completions: courseCompletions } = useCourseCompletions();
   const { streak } = useUserStreaks();
   const { goals } = useHealthGoals();
   const { toast } = useToast();
@@ -79,7 +80,7 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
         journalEntries: journalEntries,
         financialData: financialData,
         userCourses: courses,
-        courseCompletions: completions,
+        courseCompletions: courseCompletions,
         userStreaks: streak,
         exportDate: new Date().toISOString(),
         userId: user.id
