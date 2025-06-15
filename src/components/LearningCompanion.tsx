@@ -200,109 +200,111 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <Button variant="ghost" onClick={onBack} className="mr-4">
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-800">Learning Companion</h1>
-                  <p className="text-gray-600">Your personalized learning journey</p>
-                </div>
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <BookOpen className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">Learning Companion</h1>
+                <p className="text-gray-500 text-lg">Track your learning journey</p>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-gray-600">Current Streak</div>
-            <div className="text-2xl font-bold text-orange-500 flex items-center">
+            <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">Current Streak</div>
+            <div className="text-3xl font-bold text-orange-500 flex items-center justify-end mt-1">
               🔥 {getStreakDays()} days
             </div>
           </div>
         </div>
 
-        {/* Learning Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-md bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-            <CardContent className="p-6 text-center">
-              <Target className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-3xl font-bold mb-1">{currentCourses.length}</p>
-              <p className="text-sm opacity-90">Active Courses</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <CardContent className="p-8 text-center">
+              <Target className="w-10 h-10 mx-auto mb-3 opacity-90" />
+              <p className="text-4xl font-bold mb-2">{currentCourses.length}</p>
+              <p className="text-blue-100 font-medium">Active Courses</p>
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-gradient-to-r from-green-500 to-blue-500 text-white">
-            <CardContent className="p-6 text-center">
-              <Check className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-3xl font-bold mb-1">{currentCourses.reduce((total, course) => total + course.completedLessons, 0)}</p>
-              <p className="text-sm opacity-90">Lessons Completed</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-green-600 text-white">
+            <CardContent className="p-8 text-center">
+              <Check className="w-10 h-10 mx-auto mb-3 opacity-90" />
+              <p className="text-4xl font-bold mb-2">{currentCourses.reduce((total, course) => total + course.completedLessons, 0)}</p>
+              <p className="text-green-100 font-medium">Lessons Completed</p>
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-            <CardContent className="p-6 text-center">
-              <TrendingUp className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-3xl font-bold mb-1">{getTotalHours()}h</p>
-              <p className="text-sm opacity-90">Total Hours</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <CardContent className="p-8 text-center">
+              <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-90" />
+              <p className="text-4xl font-bold mb-2">{getTotalHours()}h</p>
+              <p className="text-purple-100 font-medium">Total Hours</p>
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-md bg-gradient-to-r from-orange-500 to-red-500 text-white">
-            <CardContent className="p-6 text-center">
-              <Award className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-3xl font-bold mb-1">{getCertificatesEarned()}</p>
-              <p className="text-sm opacity-90">Certificates</p>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+            <CardContent className="p-8 text-center">
+              <Award className="w-10 h-10 mx-auto mb-3 opacity-90" />
+              <p className="text-4xl font-bold mb-2">{getCertificatesEarned()}</p>
+              <p className="text-orange-100 font-medium">Certificates</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Current Courses */}
-        <Card className="mb-8 border-0 shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-              <BookOpen className="w-5 h-5 mr-2" />
+        {/* Active Courses */}
+        <Card className="mb-12 border-0 shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+              <BookOpen className="w-6 h-6 mr-3 text-blue-500" />
               Your Active Courses
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="px-8 pb-8">
+            <div className="space-y-6">
               {currentCourses.map((course) => (
-                <div key={course.id} className="p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-4">
+                <div key={course.id} className="p-8 bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-all duration-200">
+                  <div className="flex justify-between items-start mb-6">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 text-lg mb-2">{course.title}</h3>
-                      <p className="text-gray-600 text-sm mb-3">{course.description}</p>
-                      <div className="flex items-center space-x-3 mb-3">
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">{course.category}</Badge>
-                        <Badge variant="outline" className="text-green-600 border-green-200">{course.difficulty}</Badge>
-                        <span className="text-xs text-gray-500 flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
+                      <h3 className="font-bold text-gray-900 text-xl mb-3">{course.title}</h3>
+                      <p className="text-gray-600 text-base mb-4 leading-relaxed">{course.description}</p>
+                      <div className="flex items-center space-x-4 mb-4">
+                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 font-medium px-3 py-1">
+                          {course.category}
+                        </Badge>
+                        <Badge variant="outline" className="text-green-600 border-green-200 font-medium px-3 py-1">
+                          {course.difficulty}
+                        </Badge>
+                        <span className="text-sm text-gray-500 flex items-center font-medium">
+                          <Clock className="w-4 h-4 mr-2" />
                           {course.estimatedTime}
                         </span>
-                        <span className="text-xs text-gray-500">{course.timeLeft}</span>
+                        <span className="text-sm text-orange-600 font-medium">{course.timeLeft}</span>
                       </div>
                     </div>
                     <Button 
                       onClick={() => handleContinueCourse(course.id)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-6"
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 font-semibold shadow-md hover:shadow-lg transition-all"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       Continue
                     </Button>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>{course.completedLessons} of {course.totalLessons} lessons completed</span>
-                      <span className="font-semibold text-blue-600">{course.progress}%</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="text-gray-600">{course.completedLessons} of {course.totalLessons} lessons completed</span>
+                      <span className="text-blue-600 font-bold">{course.progress}%</span>
                     </div>
-                    <Progress value={course.progress} className="h-3" />
+                    <Progress value={course.progress} className="h-3 bg-gray-100" />
                   </div>
                 </div>
               ))}
@@ -310,124 +312,172 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
           </CardContent>
         </Card>
 
-        {/* Today's Lessons */}
-        <Card className="mb-8 border-0 shadow-md">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Today's Recommended Lessons
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {todaysLessons.map((lesson) => (
-                <div key={lesson.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      lesson.completed || completedLessons.includes(lesson.id) 
-                        ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      {lesson.completed || completedLessons.includes(lesson.id) ? 
-                        <Check className="w-5 h-5 text-green-600" /> : 
-                        <Play className="w-5 h-5 text-blue-600" />
-                      }
-                    </div>
-                    <div>
-                      <p className={`font-medium ${
-                        lesson.completed || completedLessons.includes(lesson.id) 
-                          ? 'text-gray-500 line-through' : 'text-gray-800'
-                      }`}>
-                        {lesson.title}
-                      </p>
-                      <div className="flex items-center space-x-3 text-xs text-gray-500 mt-1">
-                        <span className="flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {lesson.duration}
-                        </span>
-                        <Badge variant="outline" className="text-xs">{lesson.type}</Badge>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Today's Lessons */}
+          <div className="xl:col-span-2">
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="pb-6">
+                <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                  <Calendar className="w-6 h-6 mr-3 text-green-500" />
+                  Today's Recommended Lessons
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-8 pb-8">
+                <div className="space-y-4">
+                  {todaysLessons.map((lesson) => (
+                    <div key={lesson.id} className="flex items-center justify-between p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center space-x-5">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          lesson.completed || completedLessons.includes(lesson.id) 
+                            ? 'bg-green-100' : 'bg-blue-100'
+                        }`}>
+                          {lesson.completed || completedLessons.includes(lesson.id) ? 
+                            <Check className="w-6 h-6 text-green-600" /> : 
+                            <Play className="w-6 h-6 text-blue-600" />
+                          }
+                        </div>
+                        <div>
+                          <p className={`font-semibold text-lg ${
+                            lesson.completed || completedLessons.includes(lesson.id) 
+                              ? 'text-gray-500 line-through' : 'text-gray-900'
+                          }`}>
+                            {lesson.title}
+                          </p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500 mt-2">
+                            <span className="flex items-center font-medium">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {lesson.duration}
+                            </span>
+                            <Badge variant="outline" className="text-xs font-medium">{lesson.type}</Badge>
+                          </div>
+                        </div>
                       </div>
+                      {!(lesson.completed || completedLessons.includes(lesson.id)) && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleStartLesson(lesson)}
+                          className="hover:bg-blue-50 hover:border-blue-300 font-medium px-6"
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          Start
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                  {!(lesson.completed || completedLessons.includes(lesson.id)) && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleStartLesson(lesson)}
-                      className="hover:bg-blue-50 hover:border-blue-300"
-                    >
-                      <Play className="w-4 h-4 mr-1" />
-                      Start
-                    </Button>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Course Recommendations */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-                <Search className="w-5 h-5 mr-2" />
-                Get Course Recommendations
+          {/* Achievements */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                <Award className="w-6 h-6 mr-3 text-yellow-500" />
+                Achievements
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Enter a topic (e.g., programming, design, business)"
-                  value={searchTopic}
-                  onChange={(e) => setSearchTopic(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearchRecommendations()}
-                />
-                <Button onClick={handleSearchRecommendations}>
-                  <Search className="w-4 h-4" />
-                </Button>
+            <CardContent className="px-8 pb-8">
+              <div className="space-y-4">
+                {achievements.map((achievement) => (
+                  <div 
+                    key={achievement.id} 
+                    className={`p-5 rounded-xl border-2 transition-all ${
+                      achievement.earned 
+                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className={`text-3xl ${achievement.earned ? '' : 'grayscale opacity-50'}`}>
+                        {achievement.icon}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`font-semibold text-base ${achievement.earned ? 'text-yellow-800' : 'text-gray-600'}`}>
+                          {achievement.name}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">{achievement.description}</p>
+                      </div>
+                      {achievement.earned && (
+                        <Badge className="bg-yellow-500 text-white font-medium">Earned!</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {searchTopic && getRecommendationsForTopic(searchTopic).length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-medium text-gray-700">Recommended Courses for "{searchTopic}":</h4>
+        {/* Course Recommendations */}
+        <Card className="mt-12 border-0 shadow-lg">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl font-bold text-gray-900 flex items-center">
+              <Search className="w-6 h-6 mr-3 text-purple-500" />
+              Find New Courses
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-8 pb-8 space-y-8">
+            <div className="flex space-x-3">
+              <Input
+                placeholder="Enter a topic (e.g., programming, design, business)"
+                value={searchTopic}
+                onChange={(e) => setSearchTopic(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearchRecommendations()}
+                className="text-base py-3"
+              />
+              <Button onClick={handleSearchRecommendations} className="px-6 py-3">
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {searchTopic && getRecommendationsForTopic(searchTopic).length > 0 && (
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-800 text-lg">Recommended Courses for "{searchTopic}":</h4>
+                <div className="grid gap-4">
                   {getRecommendationsForTopic(searchTopic).map((course, index) => (
-                    <div key={index} className="p-3 border border-gray-200 rounded-lg">
-                      <h5 className="font-semibold text-gray-800">{course.title}</h5>
-                      <p className="text-sm text-gray-600 mt-1">{course.description}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Badge variant="outline">{course.difficulty}</Badge>
-                        <span className="text-xs text-gray-500">{course.estimatedTime}</span>
+                    <div key={index} className="p-6 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow">
+                      <h5 className="font-bold text-gray-900 text-lg mb-2">{course.title}</h5>
+                      <p className="text-gray-600 mb-4 leading-relaxed">{course.description}</p>
+                      <div className="flex items-center space-x-3">
+                        <Badge variant="outline" className="font-medium">{course.difficulty}</Badge>
+                        <span className="text-sm text-gray-500 font-medium">{course.estimatedTime}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-
-              <div className="pt-4 border-t">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowAddCourse(!showAddCourse)}
-                  className="w-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your Own Course
-                </Button>
               </div>
+            )}
 
-              {showAddCourse && (
-                <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-700">Add Custom Course</h4>
+            <div className="pt-6 border-t border-gray-200">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAddCourse(!showAddCourse)}
+                className="w-full py-3 font-semibold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your Own Course
+              </Button>
+            </div>
+
+            {showAddCourse && (
+              <div className="space-y-4 p-6 bg-gray-50 rounded-xl">
+                <h4 className="font-bold text-gray-800 text-lg">Add Custom Course</h4>
+                <div className="space-y-4">
                   <Input
                     placeholder="Course title"
                     value={newCourse.title}
                     onChange={(e) => setNewCourse({...newCourse, title: e.target.value})}
+                    className="text-base"
                   />
                   <Input
                     placeholder="Course description"
                     value={newCourse.description}
                     onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
+                    className="text-base"
                   />
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <Input
                       placeholder="Category"
                       value={newCourse.category}
@@ -439,58 +489,19 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                       onChange={(e) => setNewCourse({...newCourse, estimatedTime: e.target.value})}
                     />
                   </div>
-                  <div className="flex space-x-2">
-                    <Button onClick={handleAddCustomCourse} size="sm">
+                  <div className="flex space-x-3">
+                    <Button onClick={handleAddCustomCourse} className="font-semibold">
                       Add Course
                     </Button>
-                    <Button variant="outline" onClick={() => setShowAddCourse(false)} size="sm">
+                    <Button variant="outline" onClick={() => setShowAddCourse(false)}>
                       Cancel
                     </Button>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Achievements */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
-                <Award className="w-5 h-5 mr-2" />
-                Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {achievements.map((achievement) => (
-                  <div 
-                    key={achievement.id} 
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      achievement.earned 
-                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300' 
-                        : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`text-2xl ${achievement.earned ? '' : 'grayscale opacity-50'}`}>
-                        {achievement.icon}
-                      </div>
-                      <div>
-                        <p className={`font-medium ${achievement.earned ? 'text-yellow-800' : 'text-gray-600'}`}>
-                          {achievement.name}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">{achievement.description}</p>
-                      </div>
-                      {achievement.earned && (
-                        <Badge className="bg-yellow-500 text-white ml-auto">Earned!</Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Lesson Modal */}
         <LessonModal
