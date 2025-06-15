@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,9 +16,9 @@ serve(async (req) => {
   try {
     const { message, profile, streak, healthData } = await req.json();
     
-    const huggingFaceApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!huggingFaceApiKey) {
-      throw new Error('Hugging Face API key not configured');
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
+      throw new Error('Gemini API key not configured');
     }
 
     // Build context from user data
@@ -38,33 +37,41 @@ serve(async (req) => {
       contextualInfo += `Recent health data entries: ${healthData.length} entries logged. `;
     }
 
-    // Try using Hugging Face's text generation API with a different model
-    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-small', {
+    // Create system prompt for LifeOS assistant
+    const systemPrompt = `You are a helpful LifeOS AI assistant. You provide personalized advice and support for users working on their personal development, health, finances, and life goals. Be encouraging, practical, and supportive. Keep responses conversational and helpful.
+
+${contextualInfo ? `Context about the user: ${contextualInfo}` : ''}
+
+Respond in a friendly, encouraging tone and provide actionable advice when possible.`;
+
+    // Use Gemini API
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: `You are a helpful LifeOS AI assistant. ${contextualInfo ? `Context: ${contextualInfo}` : ''} User asks: ${message}`,
-        parameters: {
-          max_length: 100,
+        contents: [
+          {
+            parts: [
+              {
+                text: `${systemPrompt}\n\nUser message: ${message}`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
           temperature: 0.7,
-          do_sample: true,
-          pad_token_id: 50256
+          maxOutputTokens: 1000,
         },
-        options: {
-          wait_for_model: true,
-          use_cache: false
-        }
       }),
     });
 
-    console.log('Hugging Face API response status:', response.status);
+    console.log('Gemini API response status:', response.status);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Hugging Face API error:', errorData);
+      console.error('Gemini API error:', errorData);
       
       // Provide a comprehensive personalized fallback response
       const fallbackResponse = generatePersonalizedResponse(message, profile, streak);
@@ -75,16 +82,12 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('Hugging Face response:', data);
+    console.log('Gemini response:', data);
     
-    // Extract and clean the response
+    // Extract the response from Gemini
     let aiResponse = '';
-    if (Array.isArray(data) && data.length > 0) {
-      if (data[0].generated_text) {
-        aiResponse = data[0].generated_text.trim();
-        // Remove the input prompt from the response if it's included
-        aiResponse = aiResponse.replace(`You are a helpful LifeOS AI assistant. ${contextualInfo ? `Context: ${contextualInfo}` : ''} User asks: ${message}`, '').trim();
-      }
+    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
+      aiResponse = data.candidates[0].content.parts[0].text.trim();
     }
 
     // If response is empty or too short, use fallback
