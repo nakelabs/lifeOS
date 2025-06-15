@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -6,11 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, BookOpen, Star, Clock, Check, Play, Award, Target, TrendingUp, Calendar } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import LessonModal from "./LessonModal";
 
 const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
   const { toast } = useToast();
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
 
   const currentCourses = [
     {
@@ -118,12 +120,17 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     { id: "speed-learner", name: "Speed Learner", icon: "⚡", earned: false, description: "Complete 10 lessons in one day" }
   ];
 
-  const handleStartLesson = (lessonId: string) => {
+  const handleStartLesson = (lesson: any) => {
+    setSelectedLesson(lesson);
+    setIsLessonModalOpen(true);
+  };
+
+  const handleLessonComplete = (lessonId: string) => {
     if (!completedLessons.includes(lessonId)) {
       setCompletedLessons([...completedLessons, lessonId]);
       toast({
-        title: "Lesson Started!",
-        description: "Great job! Keep up the learning momentum.",
+        title: "Lesson Completed! 🎉",
+        description: "Great job! You're making excellent progress.",
       });
     }
   };
@@ -300,7 +307,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => handleStartLesson(lesson.id)}
+                      onClick={() => handleStartLesson(lesson)}
                       className="hover:bg-blue-50 hover:border-blue-300"
                     >
                       <Play className="w-4 h-4 mr-1" />
@@ -392,6 +399,14 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Lesson Modal */}
+        <LessonModal
+          lesson={selectedLesson}
+          isOpen={isLessonModalOpen}
+          onClose={() => setIsLessonModalOpen(false)}
+          onComplete={handleLessonComplete}
+        />
       </div>
     </div>
   );
