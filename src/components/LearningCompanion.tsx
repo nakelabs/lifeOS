@@ -168,7 +168,29 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
     
     // Check if course is completed (100%)
     if (newProgress === 100) {
-      setCompletingCourse(courseId);
+      // Automatically mark course as completed
+      const result = await markCourseCompleted(
+        courseId, 
+        course.title, 
+        course.total_lessons || 0
+      );
+
+      if (!result.error) {
+        setShowCelebration(true);
+        updateActivity(); // Update streak on course completion
+        
+        // Show streak celebration if user has a streak
+        if (streak && streak.current_streak > 1) {
+          setTimeout(() => {
+            showStreakCelebration(streak.current_streak);
+          }, 2000);
+        }
+
+        toast({
+          title: "🎉 Course Completed!",
+          description: `Congratulations! "${course.title}" has been completed and added to your records.`,
+        });
+      }
     } else {
       toast({
         title: "Progress Updated!",
