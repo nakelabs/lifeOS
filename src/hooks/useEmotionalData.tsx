@@ -44,7 +44,7 @@ export const useEmotionalData = () => {
       }
 
       console.log('Fetched mood entries:', data);
-      setMoodEntries((data as MoodEntry[]) || []);
+      setMoodEntries(data as unknown as MoodEntry[] || []);
     } catch (error) {
       console.error('Error fetching mood entries:', error);
     } finally {
@@ -67,12 +67,12 @@ export const useEmotionalData = () => {
         .single();
 
       let result;
-      if (existingEntry) {
+      if (existingEntry && !('error' in existingEntry)) {
         // Update existing entry
         result = await supabase
           .from('mood_entries' as any)
           .update({ mood, notes: notes || null })
-          .eq('id', existingEntry.id)
+          .eq('id', (existingEntry as any).id)
           .select()
           .single();
       } else {
