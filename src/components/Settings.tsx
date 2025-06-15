@@ -99,23 +99,16 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
     setIsDeleting(true);
     
     try {
-      // Delete user data from all tables
-      const { error: deleteError } = await supabase.rpc('delete_user_data', {
-        user_id: user.id
-      });
-
-      if (deleteError) {
-        // If RPC doesn't exist, delete manually
-        await supabase.from('mood_entries').delete().eq('user_id', user.id);
-        await supabase.from('health_data').delete().eq('user_id', user.id);
-        await supabase.from('journal_entries').delete().eq('user_id', user.id);
-        await supabase.from('financial_records').delete().eq('user_id', user.id);
-        await supabase.from('user_courses').delete().eq('user_id', user.id);
-        await supabase.from('user_interests').delete().eq('user_id', user.id);
-        await supabase.from('health_goals').delete().eq('user_id', user.id);
-        await supabase.from('user_streaks').delete().eq('user_id', user.id);
-        await supabase.from('profiles').delete().eq('id', user.id);
-      }
+      // Delete user data from all tables manually
+      await supabase.from('mood_entries').delete().eq('user_id', user.id);
+      await supabase.from('health_data').delete().eq('user_id', user.id);
+      await supabase.from('journal_entries').delete().eq('user_id', user.id);
+      await supabase.from('financial_records').delete().eq('user_id', user.id);
+      await supabase.from('user_courses').delete().eq('user_id', user.id);
+      await supabase.from('user_interests').delete().eq('user_id', user.id);
+      await supabase.from('health_goals').delete().eq('user_id', user.id);
+      await supabase.from('user_streaks').delete().eq('user_id', user.id);
+      await supabase.from('profiles').delete().eq('id', user.id);
 
       // Sign out and redirect
       await signOut();
