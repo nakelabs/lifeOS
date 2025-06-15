@@ -32,7 +32,7 @@ export const useEmotionalData = () => {
     try {
       console.log('Fetching mood entries for user:', user.id);
       const { data, error } = await supabase
-        .from('mood_entries')
+        .from('mood_entries' as any)
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
@@ -44,7 +44,7 @@ export const useEmotionalData = () => {
       }
 
       console.log('Fetched mood entries:', data);
-      setMoodEntries(data || []);
+      setMoodEntries((data as MoodEntry[]) || []);
     } catch (error) {
       console.error('Error fetching mood entries:', error);
     } finally {
@@ -60,7 +60,7 @@ export const useEmotionalData = () => {
       
       // Check if entry for today already exists
       const { data: existingEntry } = await supabase
-        .from('mood_entries')
+        .from('mood_entries' as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
@@ -70,7 +70,7 @@ export const useEmotionalData = () => {
       if (existingEntry) {
         // Update existing entry
         result = await supabase
-          .from('mood_entries')
+          .from('mood_entries' as any)
           .update({ mood, notes: notes || null })
           .eq('id', existingEntry.id)
           .select()
@@ -78,7 +78,7 @@ export const useEmotionalData = () => {
       } else {
         // Create new entry
         result = await supabase
-          .from('mood_entries')
+          .from('mood_entries' as any)
           .insert({
             user_id: user.id,
             mood,
