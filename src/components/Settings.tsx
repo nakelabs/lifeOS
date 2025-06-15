@@ -1,19 +1,139 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, Bell, Shield, Palette, Globe } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ArrowLeft, User, Bell, Shield, Palette, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useHealthData } from "@/hooks/useHealthData";
+import { useEmotionalData } from "@/hooks/useEmotionalData";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = ({ onBack }: { onBack: () => void }) => {
-  const [userName, setUserName] = useState("Friend");
+  const { user, signOut } = useAuth();
+  const { profile, updateProfile } = useProfile();
+  const { healthData } = useHealthData();
+  const { moodEntries } = useEmotionalData();
+  const { toast } = useToast();
+
+  const [userName, setUserName] = useState(profile?.name || "Friend");
   const [notifications, setNotifications] = useState(true);
   const [dailyReminders, setDailyReminders] = useState(true);
-  const [assistantTone, setAssistantTone] = useState("friendly");
-  const [language, setLanguage] = useState("english");
+  const [assistantTone, setAssistantTone] = useState(profile?.assistant_tone || "friendly");
+  const [language, setLanguage] = useState(profile?.language || "english");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleSaveSettings = async () => {
+    const result = await updateProfile({
+      name: userName,
+      assistant_tone: assistantTone,
+      language: language
+    });
+
+    if (result.error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Settings Saved",
+        description: "Your preferences have been updated successfully"
+      });
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    
+    setIsExporting(true);
+    
+    try {
+      // Collect all user data
+      const userData = {
+        profile: profile,
+        healthData: healthData,
+        moodEntries: moodEntries,
+        exportDate: new Date().toISOString(),
+        userId: user.id
+      };
+
+      // Create and download JSON file
+      const dataStr = JSON.stringify(userData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lifeos-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Data Exported",
+        description: "Your data has been downloaded successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting your data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      // Delete user data from all tables
+      const { error: deleteError } = await supabase.rpc('delete_user_data', {
+        user_id: user.id
+      });
+
+      if (deleteError) {
+        // If RPC doesn't exist, delete manually
+        await supabase.from('mood_entries').delete().eq('user_id', user.id);
+        await supabase.from('health_data').delete().eq('user_id', user.id);
+        await supabase.from('journal_entries').delete().eq('user_id', user.id);
+        await supabase.from('financial_records').delete().eq('user_id', user.id);
+        await supabase.from('user_courses').delete().eq('user_id', user.id);
+        await supabase.from('user_interests').delete().eq('user_id', user.id);
+        await supabase.from('health_goals').delete().eq('user_id', user.id);
+        await supabase.from('user_streaks').delete().eq('user_id', user.id);
+        await supabase.from('profiles').delete().eq('id', user.id);
+      }
+
+      // Sign out and redirect
+      await signOut();
+      
+      toast({
+        title: "Account Deleted",
+        description: "Your account and all data have been permanently deleted"
+      });
+    } catch (error) {
+      toast({
+        title: "Deletion Failed",
+        description: "There was an error deleting your account",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const settingsGroups = [
     {
@@ -79,13 +199,20 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
       title: "Export Data",
       description: "Download all your data in JSON format",
       buttonText: "Export",
-      buttonVariant: "outline" as const
+      buttonVariant: "outline" as const,
+      action: handleExportData,
+      loading: isExporting,
+      icon: Download
     },
     {
       title: "Delete Account",
       description: "Permanently delete your account and all data",
       buttonText: "Delete",
-      buttonVariant: "destructive" as const
+      buttonVariant: "destructive" as const,
+      action: handleDeleteAccount,
+      loading: isDeleting,
+      icon: Trash2,
+      requiresConfirmation: true
     }
   ];
 
@@ -203,9 +330,35 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
                     <h3 className="font-medium text-gray-800">{action.title}</h3>
                     <p className="text-sm text-gray-600">{action.description}</p>
                   </div>
-                  <Button variant={action.buttonVariant} size="sm">
-                    {action.buttonText}
-                  </Button>
+                  {action.requiresConfirmation ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant={action.buttonVariant} size="sm" disabled={action.loading}>
+                          <action.icon className="w-4 h-4 mr-2" />
+                          {action.loading ? 'Processing...' : action.buttonText}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={action.action} className="bg-red-600 hover:bg-red-700">
+                            Delete Account
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <Button variant={action.buttonVariant} size="sm" onClick={action.action} disabled={action.loading}>
+                      <action.icon className="w-4 h-4 mr-2" />
+                      {action.loading ? 'Processing...' : action.buttonText}
+                    </Button>
+                  )}
                 </div>
               ))}
             </CardContent>
@@ -213,7 +366,7 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button className="bg-blue-500 hover:bg-blue-600 px-8">
+            <Button onClick={handleSaveSettings} className="bg-blue-500 hover:bg-blue-600 px-8">
               Save Changes
             </Button>
           </div>
