@@ -7,6 +7,8 @@ import { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserStreaks } from "@/hooks/useUserStreaks";
 import { useHealthData } from "@/hooks/useHealthData";
+import { useFinancialData } from "@/hooks/useFinancialData";
+import { useLearningData } from "@/hooks/useLearningData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -17,23 +19,25 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
   const { profile } = useProfile();
   const { streak } = useUserStreaks();
   const { healthData } = useHealthData();
+  const { financialData, getTotalIncome, getTotalExpenses, getNetWorth } = useFinancialData();
+  const { courses, completions, getTotalProgress } = useLearningData();
   const { toast } = useToast();
   
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: `Hello ${profile?.name || 'there'}! I'm your LifeOS AI assistant. I'm here to help you with life advice, motivation, planning, and support based on your personal goals and progress. How can I assist you today? 😊`,
+      content: `Hello ${profile?.name || 'there'}! I'm your enhanced LifeOS AI assistant with full access to your health, finance, and learning data. I can provide comprehensive insights and personalized advice based on your complete profile. How can I help you today? 😊`,
       timestamp: "Just now"
     }
   ]);
 
   const quickPrompts = [
-    "How can I save money this month?",
-    "I'm feeling unmotivated, help me",
-    "Plan my weekend for me",
-    "Give me health tips for today",
-    "How do I manage stress?",
-    "Help me set goals"
+    "Analyze my overall progress across all areas",
+    "Help me budget based on my spending patterns",
+    "Create a health plan based on my data",
+    "Recommend learning paths for my goals",
+    "What should I focus on this week?",
+    "How can I improve my financial wellness?"
   ];
 
   const handleSendMessage = async () => {
@@ -50,12 +54,36 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
     setIsLoading(true);
 
     try {
+      // Prepare comprehensive user data for AI context
+      const comprehensiveData = {
+        profile: profile,
+        streak: streak,
+        healthData: healthData?.slice(0, 10), // Recent health entries
+        financialSummary: {
+          totalIncome: getTotalIncome(),
+          totalExpenses: getTotalExpenses(),
+          netWorth: getNetWorth(),
+          recentTransactions: financialData?.slice(0, 5)
+        },
+        learningSummary: {
+          totalCourses: courses?.length || 0,
+          activeCourses: courses?.filter(c => c.status === 'active').length || 0,
+          completedCourses: completions?.length || 0,
+          averageProgress: getTotalProgress(),
+          recentCourses: courses?.slice(0, 3)
+        }
+      };
+
+      console.log('Sending comprehensive data to AI:', comprehensiveData);
+
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message: message,
           profile: profile,
           streak: streak,
-          healthData: healthData?.slice(0, 5) // Send only recent health data to avoid payload size issues
+          healthData: healthData?.slice(0, 10),
+          financialData: comprehensiveData.financialSummary,
+          learningData: comprehensiveData.learningSummary
         }
       });
 
@@ -76,7 +104,7 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
       
       const errorMessage = {
         role: "assistant",
-        content: "I apologize, but I'm having trouble connecting to my AI service right now. Please try again in a moment. In the meantime, I'm still here to chat and can provide general advice based on your profile information!",
+        content: "I apologize, but I'm having trouble accessing my enhanced capabilities right now. Please try again in a moment. I'm still here to provide general advice based on your profile information!",
         timestamp: "Just now"
       };
 
@@ -98,7 +126,6 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
 
   const toggleVoice = () => {
     setIsListening(!isListening);
-    // Voice functionality would be implemented here
     toast({
       title: "Voice Feature",
       description: "Voice input coming soon!",
@@ -118,10 +145,38 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
               <MessageCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">AI Assistant</h1>
-              <p className="text-gray-600">Your personal life companion</p>
+              <h1 className="text-3xl font-bold text-gray-800">Enhanced AI Assistant</h1>
+              <p className="text-gray-600">Your comprehensive life companion with full data access</p>
             </div>
           </div>
+        </div>
+
+        {/* Data Status Indicators */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-sm font-medium text-blue-800">Health Data</div>
+              <div className="text-lg font-bold text-blue-900">{healthData?.length || 0} entries</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-sm font-medium text-green-800">Financial Records</div>
+              <div className="text-lg font-bold text-green-900">{financialData?.length || 0} records</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-sm font-medium text-purple-800">Learning Progress</div>
+              <div className="text-lg font-bold text-purple-900">{getTotalProgress()}% avg</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-sm font-medium text-orange-800">Current Streak</div>
+              <div className="text-lg font-bold text-orange-900">{streak?.current_streak || 0} days</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Chat Messages */}
@@ -154,7 +209,7 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
                   <div className="max-w-xs lg:max-w-md px-4 py-3 rounded-2xl bg-gray-100 text-gray-800">
                     <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                      <p className="text-sm">AI is thinking...</p>
+                      <p className="text-sm">AI is analyzing your comprehensive data...</p>
                     </div>
                   </div>
                 </div>
@@ -166,7 +221,7 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
         {/* Quick Prompts */}
         <Card className="mb-6 border-0 shadow-md">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Quick Questions</CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-800">Comprehensive Analysis Questions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -191,7 +246,7 @@ const ChatAssistant = ({ onBack }: { onBack: () => void }) => {
             <div className="flex space-x-3">
               <div className="flex-1 flex space-x-2">
                 <Input
-                  placeholder="Ask me anything about life, goals, health, finance..."
+                  placeholder="Ask me anything about your health, finances, learning, or overall life optimization..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
