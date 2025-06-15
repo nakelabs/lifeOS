@@ -17,9 +17,9 @@ serve(async (req) => {
   try {
     const { message, profile, streak, healthData } = await req.json();
     
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const huggingFaceApiKey = Deno.env.get('OPENAI_API_KEY'); // Using the same env var name for the HF key
+    if (!huggingFaceApiKey) {
+      throw new Error('Hugging Face API key not configured');
     }
 
     // Build context from user data
@@ -54,30 +54,51 @@ Guidelines:
 - For goal-setting, use SMART goal principles
 - Keep responses to 2-3 paragraphs maximum`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Format the prompt for Hugging Face API
+    const formattedPrompt = `System: ${systemPrompt}\n\nUser: ${message}\n\nAssistant:`;
+
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 500,
-        temperature: 0.7,
+        inputs: formattedPrompt,
+        parameters: {
+          max_length: 300,
+          temperature: 0.7,
+          do_sample: true,
+          return_full_text: false
+        },
+        options: {
+          wait_for_model: true
+        }
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      const errorData = await response.text();
+      console.error('Hugging Face API error:', errorData);
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    
+    // Extract the response text
+    let aiResponse = '';
+    if (Array.isArray(data) && data.length > 0) {
+      aiResponse = data[0].generated_text || 'I apologize, but I could not generate a response at this time.';
+    } else if (data.generated_text) {
+      aiResponse = data.generated_text;
+    } else {
+      aiResponse = 'I apologize, but I could not generate a response at this time. Please try again.';
+    }
+
+    // Clean up the response if it contains the original prompt
+    if (aiResponse.includes('Assistant:')) {
+      aiResponse = aiResponse.split('Assistant:').pop()?.trim() || aiResponse;
+    }
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
