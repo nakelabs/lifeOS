@@ -44,8 +44,8 @@ ${contextualInfo ? `Context about the user: ${contextualInfo}` : ''}
 
 Respond in a friendly, encouraging tone and provide actionable advice when possible.`;
 
-    // Use Gemini API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
+    // Use Gemini API with the correct model name
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
