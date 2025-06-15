@@ -642,7 +642,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                               )}
                             </div>
                             
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               <div className="flex justify-between text-sm font-medium">
                                 <span className="text-gray-600">
                                   {course.completed_lessons} of {course.total_lessons || 'N/A'} lessons completed
@@ -651,23 +651,24 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                               </div>
                               <Progress value={course.progress} className="h-3" />
                               
-                              {/* Modern Progress Update UI */}
-                              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-gray-700">Update Progress</span>
+                              {/* Compact Modern Progress Update UI */}
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-gray-600">Update Progress</span>
                                   {editingProgress === course.id ? (
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1">
                                       <Button
                                         size="sm"
                                         variant="outline"
                                         onClick={handleCancelEditProgress}
+                                        className="h-6 px-2 text-xs"
                                       >
                                         Cancel
                                       </Button>
                                       <Button
                                         size="sm"
                                         onClick={() => handleSaveProgress(course.id)}
-                                        className="bg-green-600 hover:bg-green-700"
+                                        className="h-6 px-2 text-xs bg-green-600 hover:bg-green-700"
                                       >
                                         Save
                                       </Button>
@@ -677,6 +678,7 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleStartEditProgress(course.id, course.progress)}
+                                      className="h-6 px-2 text-xs"
                                     >
                                       Edit
                                     </Button>
@@ -684,20 +686,18 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                                 </div>
                                 
                                 {editingProgress === course.id ? (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center space-x-3">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={tempProgress}
-                                        onChange={(e) => setTempProgress(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-                                        className="w-20 h-8 text-center font-semibold"
-                                      />
-                                      <span className="text-sm text-gray-600">%</span>
-                                      <div className="flex-1">
-                                        <Progress value={tempProgress} className="h-2" />
-                                      </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={tempProgress}
+                                      onChange={(e) => setTempProgress(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                                      className="w-16 h-6 text-xs text-center font-semibold"
+                                    />
+                                    <span className="text-xs text-gray-600">%</span>
+                                    <div className="flex-1">
+                                      <Progress value={tempProgress} className="h-1.5" />
                                     </div>
                                   </div>
                                 ) : (
@@ -706,14 +706,14 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleQuickProgressUpdate(course.id, -5)}
-                                      className="w-10 h-10 p-0 rounded-full hover:bg-red-50 hover:border-red-200"
+                                      className="w-7 h-7 p-0 rounded-full hover:bg-red-50 hover:border-red-200"
                                       disabled={course.progress <= 0}
                                     >
-                                      <Minus className="w-4 h-4 text-red-600" />
+                                      <Minus className="w-3 h-3 text-red-600" />
                                     </Button>
                                     
-                                    <div className="flex items-center space-x-3 px-4 py-2 bg-white rounded-lg border shadow-sm">
-                                      <span className="text-2xl font-bold text-blue-600 min-w-[3rem] text-center">
+                                    <div className="flex items-center px-3 py-1 bg-white rounded-md border shadow-sm">
+                                      <span className="text-lg font-bold text-blue-600 min-w-[2.5rem] text-center">
                                         {course.progress}%
                                       </span>
                                     </div>
@@ -722,10 +722,10 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleQuickProgressUpdate(course.id, 5)}
-                                      className="w-10 h-10 p-0 rounded-full hover:bg-green-50 hover:border-green-200"
+                                      className="w-7 h-7 p-0 rounded-full hover:bg-green-50 hover:border-green-200"
                                       disabled={course.progress >= 100}
                                     >
-                                      <Plus className="w-4 h-4 text-green-600" />
+                                      <Plus className="w-3 h-3 text-green-600" />
                                     </Button>
                                   </div>
                                 )}
