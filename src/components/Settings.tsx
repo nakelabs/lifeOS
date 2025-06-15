@@ -11,6 +11,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useHealthData } from "@/hooks/useHealthData";
 import { useEmotionalData } from "@/hooks/useEmotionalData";
+import { useFinancialData } from "@/hooks/useFinancialData";
+import { useJournalData } from "@/hooks/useJournalData";
+import { useLearningData } from "@/hooks/useLearningData";
+import { useCourseCompletions } from "@/hooks/useCourseCompletions";
+import { useUserStreaks } from "@/hooks/useUserStreaks";
+import { useHealthGoals } from "@/hooks/useHealthGoals";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,6 +25,12 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
   const { profile, updateProfile } = useProfile();
   const { healthData } = useHealthData();
   const { moodEntries } = useEmotionalData();
+  const { financialData } = useFinancialData();
+  const { journalEntries } = useJournalData();
+  const { userCourses } = useLearningData();
+  const { completions } = useCourseCompletions();
+  const { streaks } = useUserStreaks();
+  const { healthGoals } = useHealthGoals();
   const { toast } = useToast();
 
   const [userName, setUserName] = useState(profile?.name || "Friend");
@@ -58,11 +70,17 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
     setIsExporting(true);
     
     try {
-      // Collect all user data
+      // Collect all user data including missing tables
       const userData = {
         profile: profile,
         healthData: healthData,
+        healthGoals: healthGoals,
         moodEntries: moodEntries,
+        journalEntries: journalEntries,
+        financialData: financialData,
+        userCourses: userCourses,
+        courseCompletions: completions,
+        userStreaks: streaks,
         exportDate: new Date().toISOString(),
         userId: user.id
       };
@@ -101,15 +119,16 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
     setIsDeleting(true);
     
     try {
-      // Delete user data from all tables manually
+      // Delete user data from all tables manually (including missing ones)
+      await supabase.from('course_completions').delete().eq('user_id', user.id);
+      await supabase.from('user_streaks').delete().eq('user_id', user.id);
       await supabase.from('mood_entries').delete().eq('user_id', user.id);
       await supabase.from('health_data').delete().eq('user_id', user.id);
+      await supabase.from('health_goals').delete().eq('user_id', user.id);
       await supabase.from('journal_entries').delete().eq('user_id', user.id);
       await supabase.from('financial_records').delete().eq('user_id', user.id);
       await supabase.from('user_courses').delete().eq('user_id', user.id);
       await supabase.from('user_interests').delete().eq('user_id', user.id);
-      await supabase.from('health_goals').delete().eq('user_id', user.id);
-      await supabase.from('user_streaks').delete().eq('user_id', user.id);
       await supabase.from('profiles').delete().eq('id', user.id);
 
       // Sign out and redirect
