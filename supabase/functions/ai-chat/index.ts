@@ -17,7 +17,7 @@ serve(async (req) => {
   try {
     const { message, profile, streak, healthData } = await req.json();
     
-    const huggingFaceApiKey = Deno.env.get('OPENAI_API_KEY'); // Using the same env var name for the HF key
+    const huggingFaceApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!huggingFaceApiKey) {
       throw new Error('Hugging Face API key not configured');
     }
@@ -38,35 +38,20 @@ serve(async (req) => {
       contextualInfo += `Recent health data entries: ${healthData.length} entries logged. `;
     }
 
-    const systemPrompt = `You are a helpful LifeOS AI assistant designed to provide personalized life advice, motivation, and support. You help users with goal setting, health, finance, learning, emotional wellbeing, and general life guidance.
-
-${contextualInfo ? `User context: ${contextualInfo}` : ''}
-
-Guidelines:
-- Be encouraging, supportive, and personal in your responses
-- Reference the user's data when relevant (goals, streaks, focus areas)
-- Provide actionable advice and specific suggestions
-- Keep responses conversational but informative
-- Acknowledge their progress and achievements when appropriate
-- If they mention feeling unmotivated, provide encouraging support
-- For health questions, give general wellness advice
-- For financial questions, provide practical budgeting and saving tips
-- For goal-setting, use SMART goal principles
-- Keep responses to 2-3 paragraphs maximum`;
-
-    // Try using a more reliable text generation model
-    const response = await fetch('https://api-inference.huggingface.co/models/google/flan-t5-base', {
+    // Try using Hugging Face's text generation API with a different model
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-small', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: `${systemPrompt}\n\nUser question: ${message}\n\nProvide helpful advice:`,
+        inputs: `You are a helpful LifeOS AI assistant. ${contextualInfo ? `Context: ${contextualInfo}` : ''} User asks: ${message}`,
         parameters: {
-          max_new_tokens: 150,
+          max_length: 100,
           temperature: 0.7,
-          do_sample: true
+          do_sample: true,
+          pad_token_id: 50256
         },
         options: {
           wait_for_model: true,
@@ -81,16 +66,9 @@ Guidelines:
       const errorData = await response.text();
       console.error('Hugging Face API error:', errorData);
       
-      // Provide a personalized fallback response
-      const fallbackResponse = `Hello ${profile?.name || 'there'}! I'm having some technical difficulties connecting to my AI service right now, but I'm still here to help based on your profile! 
-
-I can see you're focused on ${profile?.focus_areas?.join(' and ') || 'health'}, which is fantastic! Your current ${streak?.current_streak || 0} day streak shows you're building great habits. Here are some personalized tips:
-
-${profile?.focus_areas?.includes('health') ? '• Keep tracking your health metrics - consistency is key for long-term success\n• Try to maintain your current routine and gradually build upon it' : ''}
-${profile?.focus_areas?.includes('finance') ? '• Focus on small, consistent saving habits\n• Track your expenses to identify areas for improvement' : ''}
-
-What specific area would you like advice on today? I'm here to help with health, goals, finance, or general life guidance!`;
-
+      // Provide a comprehensive personalized fallback response
+      const fallbackResponse = generatePersonalizedResponse(message, profile, streak);
+      
       return new Response(JSON.stringify({ response: fallbackResponse }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -99,27 +77,19 @@ What specific area would you like advice on today? I'm here to help with health,
     const data = await response.json();
     console.log('Hugging Face response:', data);
     
-    // Extract the response text
+    // Extract and clean the response
     let aiResponse = '';
-    if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-      aiResponse = data[0].generated_text.trim();
-    } else if (data.generated_text) {
-      aiResponse = data.generated_text.trim();
-    } else {
-      // Provide a contextual fallback response
-      aiResponse = `Hello ${profile?.name || 'there'}! Thanks for your message about "${message}". 
-
-Based on your profile, I can see you're focused on ${profile?.focus_areas?.join(' and ') || 'personal development'} - that's wonderful! Your current streak of ${streak?.current_streak || 0} days shows you're building great habits.
-
-Here's some advice: Stay consistent with your current routine, celebrate small wins, and remember that progress takes time. Your dedication to tracking your health data shows you're on the right path!
-
-How can I help you further with your goals today?`;
+    if (Array.isArray(data) && data.length > 0) {
+      if (data[0].generated_text) {
+        aiResponse = data[0].generated_text.trim();
+        // Remove the input prompt from the response if it's included
+        aiResponse = aiResponse.replace(`You are a helpful LifeOS AI assistant. ${contextualInfo ? `Context: ${contextualInfo}` : ''} User asks: ${message}`, '').trim();
+      }
     }
 
-    // Clean up the response if it contains the system prompt
-    if (aiResponse.includes('User question:')) {
-      const parts = aiResponse.split('Provide helpful advice:');
-      aiResponse = parts.length > 1 ? parts[1].trim() : aiResponse;
+    // If response is empty or too short, use fallback
+    if (!aiResponse || aiResponse.length < 10) {
+      aiResponse = generatePersonalizedResponse(message, profile, streak);
     }
 
     return new Response(JSON.stringify({ response: aiResponse }), {
@@ -147,3 +117,61 @@ What specific area would you like advice on today - health, goals, finance, or s
     });
   }
 });
+
+function generatePersonalizedResponse(message: string, profile: any, streak: any): string {
+  const userName = profile?.name || 'there';
+  const focusAreas = profile?.focus_areas?.join(' and ') || 'personal development';
+  const currentStreak = streak?.current_streak || 0;
+  
+  // Generate contextual responses based on message content
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('unmotivated') || lowerMessage.includes('motivation')) {
+    return `Hi ${userName}! I understand you're feeling unmotivated right now. Remember, you've already built a ${currentStreak} day streak - that shows incredible dedication! 
+
+Your focus on ${focusAreas} is admirable. Here's what I suggest:
+• Start with one small task today - even 5 minutes counts
+• Review your recent progress to see how far you've come
+• Remember your "why" - what drives your goals?
+• Take a short break if needed - rest is part of growth
+
+You've got this! What's one small step you can take right now?`;
+  }
+  
+  if (lowerMessage.includes('health') || lowerMessage.includes('fitness')) {
+    return `Great question about health, ${userName}! Based on your focus on ${focusAreas} and your ${currentStreak} day streak, you're already on a fantastic path.
+
+Here are some health tips tailored for you:
+• Consistency beats perfection - keep logging your health data
+• Focus on one health habit at a time to avoid overwhelm
+• Celebrate small wins like your current streak
+• Stay hydrated and get adequate sleep for better results
+
+What specific health area would you like to improve today?`;
+  }
+  
+  if (lowerMessage.includes('money') || lowerMessage.includes('finance') || lowerMessage.includes('save')) {
+    return `Hi ${userName}! Financial wellness is such an important part of overall life satisfaction. With your dedication (shown by your ${currentStreak} day streak), you can definitely build strong financial habits too!
+
+Here are some practical tips:
+• Start with tracking expenses for one week
+• Set up automatic savings - even $5/week helps
+• Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings
+• Build an emergency fund gradually
+
+What's your biggest financial challenge right now?`;
+  }
+  
+  // Default personalized response
+  return `Hello ${userName}! Thanks for your message about "${message}". 
+
+Based on your profile, I can see you're focused on ${focusAreas} - that's wonderful! Your current streak of ${currentStreak} days shows you're building great habits consistently.
+
+Here's some general advice:
+• Keep up the momentum you've already built
+• Break big goals into smaller, manageable steps
+• Track your progress regularly (you're already doing great!)
+• Remember that small daily actions lead to big results
+
+How can I help you further with your ${focusAreas} goals today?`;
+}
