@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Bell, Shield, Palette, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Bell, Shield, Palette, Download, Trash2, Sparkles, Zap, Target, Star } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -234,53 +234,82 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center mb-8">
-          <Button variant="ghost" onClick={onBack} className="mr-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
+        {/* Modern Header */}
+        <div className="flex items-center mb-12">
+          <Button 
+            variant="ghost" 
+            onClick={onBack} 
+            className="mr-6 hover:bg-white/10 text-white/80 hover:text-white transition-all duration-300 backdrop-blur-sm border border-white/10 rounded-xl"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
-            <p className="text-gray-600">Customize your LifeOS experience</p>
+            <h1 className="text-4xl font-black text-white mb-2 flex items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl animate-pulse">
+                <Shield className="w-7 h-7 text-white" />
+              </div>
+              <span>Settings</span>
+              <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
+            </h1>
+            <p className="text-white/70 text-lg ml-18">Customize your LifeOS experience</p>
           </div>
         </div>
 
-        {/* Settings Groups */}
-        <div className="space-y-6">
+        {/* Modern Settings Groups */}
+        <div className="space-y-8">
           {settingsGroups.map((group, groupIndex) => (
-            <Card key={group.title} className="border-0 shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-3 text-lg font-semibold text-gray-800">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                    <group.icon className="w-4 h-4 text-white" />
+            <Card key={group.title} className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 relative overflow-hidden">
+              {/* Animated background */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 animate-pulse"></div>
+              </div>
+              
+              {/* Floating decorative elements */}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12"></div>
+              
+              <CardHeader className="relative z-10">
+                <CardTitle className="flex items-center space-x-4 text-2xl font-black text-white">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl">
+                    <group.icon className="w-6 h-6 text-white" />
                   </div>
                   <span>{group.title}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              
+              <CardContent className="space-y-8 relative z-10">
                 {group.items.map((item, itemIndex) => (
-                  <div key={itemIndex} className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">{item.label}</Label>
+                  <div key={itemIndex} className="space-y-4">
+                    <Label className="text-lg font-bold text-white/90 flex items-center space-x-2">
+                      <Target className="w-5 h-5 text-purple-400" />
+                      <span>{item.label}</span>
+                    </Label>
                     
                     {item.type === "input" && (
                       <Input
                         value={item.value as string}
                         onChange={(e) => item.onChange?.(e.target.value)}
                         placeholder={item.placeholder}
-                        className="max-w-md"
+                        className="max-w-md h-12 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-xl focus:border-purple-400 focus:ring-purple-400 backdrop-blur-sm"
                       />
                     )}
                     
                     {item.type === "select" && (
                       <Select value={item.value as string} onValueChange={item.onChange}>
-                        <SelectTrigger className="max-w-md">
+                        <SelectTrigger className="max-w-md h-12 bg-white/10 border-white/20 text-white rounded-xl backdrop-blur-sm">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-800 border-white/20 backdrop-blur-xl">
                           {item.options?.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
+                            <SelectItem key={option.value} value={option.value} className="text-white hover:bg-white/10">
                               {option.label}
                             </SelectItem>
                           ))}
@@ -289,13 +318,14 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
                     )}
                     
                     {item.type === "switch" && (
-                      <div className="flex items-center justify-between max-w-md">
+                      <div className="flex items-center justify-between max-w-md p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
                         <div className="space-y-1">
-                          <p className="text-sm text-gray-600">{item.description}</p>
+                          <p className="text-white/80 font-medium">{item.description}</p>
                         </div>
                         <Switch
                           checked={item.value as boolean}
                           onCheckedChange={item.onChange}
+                          className="data-[state=checked]:bg-purple-500"
                         />
                       </div>
                     )}
@@ -305,84 +335,128 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
             </Card>
           ))}
 
-          {/* Focus Areas */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-3 text-lg font-semibold text-gray-800">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                  <Palette className="w-4 h-4 text-white" />
+          {/* Modern Focus Areas */}
+          <Card className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 relative overflow-hidden">
+            {/* Animated background */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 animate-pulse"></div>
+            </div>
+            
+            <CardHeader className="relative z-10">
+              <CardTitle className="flex items-center space-x-4 text-2xl font-black text-white">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl">
+                  <Palette className="w-6 h-6 text-white" />
                 </div>
                 <span>Focus Areas</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600 mb-4">
+            
+            <CardContent className="relative z-10">
+              <p className="text-white/80 font-medium mb-6 text-lg">
                 Select which areas you'd like LifeOS to help you with
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {["Health", "Finance", "Learning", "Emotional Wellbeing", "Productivity", "Relationships"].map((area) => (
-                  <div key={area} className="flex items-center space-x-3">
-                    <Switch defaultChecked />
-                    <Label className="text-sm">{area}</Label>
+                  <div key={area} className="flex items-center justify-between p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 group">
+                    <Label className="text-white font-bold text-lg flex items-center space-x-3">
+                      <Star className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition-colors duration-300" />
+                      <span>{area}</span>
+                    </Label>
+                    <Switch defaultChecked className="data-[state=checked]:bg-purple-500" />
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Privacy & Data */}
-          <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-3 text-lg font-semibold text-gray-800">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-white" />
+          {/* Modern Privacy & Data */}
+          <Card className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl hover:shadow-3xl transition-all duration-500 relative overflow-hidden">
+            {/* Animated background */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="w-full h-full bg-gradient-to-br from-green-500/20 to-blue-500/20 animate-pulse"></div>
+            </div>
+            
+            <CardHeader className="relative z-10">
+              <CardTitle className="flex items-center space-x-4 text-2xl font-black text-white">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-2xl">
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
                 <span>Privacy & Data</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            
+            <CardContent className="space-y-6 relative z-10">
               {dangerActions.map((action, index) => (
-                <div key={action.title} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-800">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
+                <div key={action.title} className="group flex items-center justify-between p-6 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-500 hover:scale-105 relative overflow-hidden">
+                  {/* Hover effect background */}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${action.buttonVariant === 'destructive' ? 'from-red-500/20 to-pink-500/20' : 'from-blue-500/20 to-purple-500/20'} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                  
+                  <div className="relative z-10">
+                    <h3 className="font-black text-white text-xl mb-2 flex items-center space-x-3">
+                      <action.icon className="w-6 h-6 text-purple-400" />
+                      <span>{action.title}</span>
+                    </h3>
+                    <p className="text-white/80 font-medium">{action.description}</p>
                   </div>
-                  <Button variant={action.buttonVariant} size="sm" onClick={action.action} disabled={action.loading}>
-                    <action.icon className="w-4 h-4 mr-2" />
-                    {action.loading ? 'Processing...' : action.buttonText}
+                  
+                  <Button 
+                    variant={action.buttonVariant} 
+                    size="lg" 
+                    onClick={action.action} 
+                    disabled={action.loading}
+                    className={`relative z-10 px-8 py-4 text-lg font-black rounded-xl transition-all duration-500 transform hover:scale-110 border-0 ${
+                      action.buttonVariant === 'destructive' 
+                        ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white shadow-2xl' 
+                        : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-2xl'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <action.icon className="w-5 h-5" />
+                      <span>{action.loading ? 'Processing...' : action.buttonText}</span>
+                    </div>
                   </Button>
                 </div>
               ))}
             </CardContent>
           </Card>
 
-          {/* Save Button */}
+          {/* Modern Save Button */}
           <div className="flex justify-end">
-            <Button onClick={handleSaveSettings} className="bg-blue-500 hover:bg-blue-600 px-8">
-              Save Changes
+            <Button 
+              onClick={handleSaveSettings} 
+              className="px-12 py-4 text-lg font-black bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 text-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-105 border-0 relative overflow-hidden group"
+            >
+              {/* Animated background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <div className="relative z-10 flex items-center space-x-3">
+                <Sparkles className="w-6 h-6" />
+                <span>Save Changes</span>
+                <Zap className="w-6 h-6" />
+              </div>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Delete Account Confirmation Dialog */}
+      {/* Modern Delete Account Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-md bg-slate-900/95 backdrop-blur-xl border border-white/20 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600 flex items-center">
-              <Trash2 className="w-5 h-5 mr-2" />
+            <AlertDialogTitle className="text-red-400 flex items-center text-2xl font-black">
+              <Trash2 className="w-6 h-6 mr-3" />
               Delete Account
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center mb-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                  <span className="font-medium text-red-800">Warning: This action is irreversible</span>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-red-500/20 border border-red-500/30 rounded-2xl p-6 mb-6 backdrop-blur-sm">
+                <div className="flex items-center mb-4">
+                  <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
+                  <span className="font-black text-red-400 text-lg">Warning: This action is irreversible</span>
                 </div>
-                <p className="text-red-700 text-sm">
+                <p className="text-red-300 font-medium mb-4">
                   This will permanently delete your account and all associated data including:
                 </p>
-                <ul className="text-red-700 text-sm mt-2 ml-4 list-disc">
+                <ul className="text-red-300 font-medium ml-6 space-y-1 list-disc">
                   <li>Profile information</li>
                   <li>Health data and goals</li>
                   <li>Mood entries and journal</li>
@@ -392,30 +466,33 @@ const Settings = ({ onBack }: { onBack: () => void }) => {
                 </ul>
               </div>
               <div>
-                <Label className="text-sm font-medium">
-                  To confirm, type <strong>DELETE</strong> in the box below:
+                <Label className="text-lg font-bold text-white/90 mb-3 block">
+                  To confirm, type <strong className="text-red-400">DELETE</strong> in the box below:
                 </Label>
                 <Input
                   value={deleteConfirmation}
                   onChange={(e) => setDeleteConfirmation(e.target.value)}
                   placeholder="Type DELETE to confirm"
-                  className="mt-2"
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 rounded-xl focus:border-red-400 focus:ring-red-400 h-12 text-lg font-bold"
                 />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setDeleteConfirmation("");
-              setShowDeleteDialog(false);
-            }}>
+          <AlertDialogFooter className="space-x-4">
+            <AlertDialogCancel 
+              onClick={() => {
+                setDeleteConfirmation("");
+                setShowDeleteDialog(false);
+              }}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl px-8 py-3 font-bold"
+            >
               Cancel
             </AlertDialogCancel>
             <Button
               variant="destructive"
               onClick={handleDeleteAccount}
               disabled={deleteConfirmation !== "DELETE" || isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 border-0 rounded-xl px-8 py-3 font-black text-white shadow-2xl"
             >
               {isDeleting ? "Deleting..." : "Delete Account"}
             </Button>

@@ -841,7 +841,9 @@ const LearningCompanion = ({ onBack }: { onBack: () => void }) => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Difficulty</label>
+                      <label htmlFor="difficulty-select" className="block text-sm font-medium mb-2">Difficulty</label>
                       <select
+                        id="difficulty-select"
                         className="w-full p-2 border border-gray-300 rounded-md"
                         value={newCourse.difficulty}
                         onChange={(e) => setNewCourse({...newCourse, difficulty: e.target.value})}
